@@ -97,11 +97,74 @@ possible commands, using a dict value::
     def test_homebrew_gsed():
         expected_sed = "gsed -e s/foo/bar/g file.txt"
         c = MockContext(run={
-            "which gsed": Result(),
+            "which gsed": Result(exited=0),
             expected_sed: Result(),
         })
         replace(c, 'file.txt', 'foo', 'bar')
         c.run.assert_called_with(expected_sed)
+
+Boolean and string mock results
+-------------------------------
+
+You may have noticed the above example uses a handful of 'empty' `.Result`
+objects; these stand in for "succeeded, but otherwise had no useful attributes"
+command executions (as `.Result` defaults to an exit code of ``0`` and empty
+strings for stdout/stderr).
+
+This is relatively common - think "interrogative" commands where the caller
+only cares for a boolean result, or times when a command is called purely for
+its side effects. To support this, there's a shorthand in `.MockContext`:
+passing ``True`` or ``False`` to stand in for otherwise blank Results with exit
+codes of ``0`` or ``1`` respectively.
+
+The example tests then look like this::
+
+    from invoke import MockContext, Result
+    from mytasks import replace
+
+    def test_regular_sed():
+        expected_sed = "sed -e s/foo/bar/g file.txt"
+        c = MockContext(run={
+            "which gsed": False,
+            expected_sed: True,
+        })
+        replace(c, 'file.txt', 'foo', 'bar')
+        c.run.assert_called_with(expected_sed)
+
+    def test_homebrew_gsed():
+        expected_sed = "gsed -e s/foo/bar/g file.txt"
+        c = MockContext(run={
+            "which gsed": True,
+            expected_sed: True,
+        })
+        replace(c, 'file.txt', 'foo', 'bar')
+        c.run.assert_called_with(expected_sed)
+
+On top of that, you may also use string values as shorthand for a command's
+standard output::
+
+    from invoke import MockContext
+    
+    TK : short example showing this...maybe NOT based on above lol
+
+
+
+Regular expression command matching
+-----------------------------------
+
+The dict form of `.MockContext` kwarg can accept regular expression objects in
+addition to strings, ideal for situations where you either don't know the exact
+command being invoked, or simply don't need or want to write out the entire
+thing::
+
+    from invoke import MockContext
+
+Reproducible results
+--------------------
+
+TK: reproducible kwarg
+
+
 
 Expect `Results <.Result>`
 ==========================

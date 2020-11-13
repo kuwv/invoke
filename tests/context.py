@@ -541,6 +541,39 @@ class MockContext_:
         assert c.run("foo").stdout == "bar"
         assert c.run("foo").stdout == "biz"
 
+    def return_value_map_keys_may_be_compiled_regexen(self):
+        c = MockContext(run={"string": "yup", re.compile(r"foo.*"): "bar"})
+        assert c.run("string").stdout == "yup"
+        assert c.run("foobar").stdout == "bar"
+
+    class boolean_result_shorthand:
+        def as_singleton_args(self):
+            assert MockContext(run=True).run("anything").ok
+            assert not MockContext(run=False).run("anything", warn=True).ok
+
+        def as_iterables(self):
+            mc = MockContext(run=[True, False])
+            assert mc.run("anything").ok
+            assert not mc.run("anything", warn=True).ok
+
+        def as_dict_values(self):
+            mc = MockContext(run=dict(foo=True, bar=False))
+            assert mc.run("foo").ok
+            assert not mc.run("bar", warn=True).ok
+
+    class string_result_shorthand:
+        def as_singleton_args(self):
+            assert MockContext(run="yo").run("anything").stdout == "yo"
+
+        def in_iterables(self):
+            mc = MockContext(run=["hello", "there"])
+            assert mc.run("anything").stdout == "hello"
+            assert mc.run("anything").stdout == "there"
+
+        def as_dict_values(self):
+            mc = MockContext(run=dict(biz="hi"))
+            assert mc.run("biz").stdout == "hi"
+
     class commands_injected_into_Result:
         @mark.parametrize(
             "kwargs", (dict(), dict(command=""), dict(command=None))
@@ -557,6 +590,21 @@ class MockContext_:
     def methods_with_no_kwarg_values_raise_NotImplementedError(self):
         with raises(NotImplementedError):
             MockContext().run("onoz I did not anticipate this would happen")
+
+    def repeat_True_does_not_consume_singleton_results(self):
+        mc = MockContext(
+            repeat=True,
+            run=dict(
+                singleton=True,  # will repeat
+                iterable=["tick", "tock"],  # will not
+            ),
+        )
+        assert mc.run("singleton").ok
+        assert mc.run("singleton").ok  # not consumed
+        assert mc.run("iterable").stdout == "tick"
+        assert mc.run("iterable").stdout == "tock"
+        with raises(NotImplementedError):
+            assert mc.run("iterable")
 
     def sudo_also_covered(self):
         c = MockContext(sudo=Result(stderr="super duper"))

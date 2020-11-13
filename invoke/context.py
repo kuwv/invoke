@@ -404,26 +404,47 @@ class MockContext(Context):
             A Configuration object to use. Identical in behavior to `.Context`.
 
         :param run:
-            A data structure of `Results <.Result>`, to return from calls to
-            the instantiated object's `~.Context.run` method (instead of
-            actually executing the requested shell command).
+            A data structure indicating what `.Result` objects to return from
+            calls to the instantiated object's `~.Context.run` method (instead
+            of actually executing the requested shell command).
 
             Specifically, this kwarg accepts:
 
-            - A single `.Result` object, which will be returned once.
-            - An iterable of `Results <.Result>`, which will be returned on
-              each subsequent call to ``.run``.
-            - A map of command strings to either of the above, allowing
-              specific call-and-response semantics instead of assuming a call
-              order.
+            - A single `.Result` object.
+            - A string, which will yield a `.Result` with that string as its
+              ``stdout``.
+            - A boolean; if True, yields a `.Result` whose ``exited`` is ``0``,
+              and if False, ``1``.
+            - An iterable of the above values, which will be returned on each
+              subsequent call to ``.run`` (the first item on the first call,
+              the second on the second call, etc).
+            - A dict mapping command strings or compiled regexen to the above
+              values (including an iterable), allowing specific
+              call-and-response semantics instead of assuming a call order.
 
         :param sudo:
             Identical to ``run``, but whose values are yielded from calls to
             `~.Context.sudo`.
 
+        :param bool repeat:
+            A flag determining whether singleton results yielded by this class'
+            methods repeat or are consumed.
+
+            For example, when a single result is indicated, it will normally
+            only be returned once, causing `NotImplementedError` afterwards.
+            But when ``repeat=True`` is given, that result is returned on
+            every call, forever.
+
+            Default: ``False`` (for backwards compatibility reasons).
+
+            ..note::
+                Iterable values are not affected, because it is assumed they
+                are being used to mock out a series of state changes and should
+                not repeat.
+
         :raises:
             ``TypeError``, if the values given to ``run`` or other kwargs
-            aren't individual `.Result` objects or iterables.
+            aren't of the expected types.
         """
         # Figure out if we can support Mock in the current environment
         Mock = None
@@ -434,7 +455,6 @@ class MockContext(Context):
                 from unittest.mock import Mock
             except ImportError:
                 pass
-        # TODO: would be nice to allow regexen instead of exact string matches
         super(MockContext, self).__init__(config)
         for method, results in iteritems(kwargs):
             # Special convenience case: individual Result -> one-item list
@@ -475,6 +495,9 @@ class MockContext(Context):
             elif isinstance(value, Result):
                 result = value
                 delattr(self, attname)
+            # Transform shorthand bools
+            elif isinstance(value, bool):
+                result = Result(exited=0 if value else 1)
             # Populate command string unless explicitly given
             if not result.command:
                 result.command = command
