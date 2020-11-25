@@ -50,10 +50,27 @@ alabaster = "0.7.12"
 releases = "~1"
 invocations = "^1.4.0"
 semantic-version = "^2.4"
+black = {version = "18.5b0", allow-prereleases = true, python = "^3.6"}
 
 [tool.poetry.scripts]
 invoke = "invoke.main:program.run"
 inv = "invoke.main:program.run"
+
+[tool.black]
+line-length = 79
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+    | \.git
+    | \.mypy_cache
+    | \.pytest_cache
+    | _build
+    | build
+    | dist
+  )
+)
+'''
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
