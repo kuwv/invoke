@@ -94,7 +94,7 @@ class Collection(object):
         self.collections = Lexicon()
         self.default = None
         self.name = None
-        self._configuration = {}
+        self._configuration = kwargs.pop("configuration", {})
         # Specific kwargs if applicable
         self.loaded_from = kwargs.pop("loaded_from", None)
         self.auto_dash_names = kwargs.pop("auto_dash_names", None)

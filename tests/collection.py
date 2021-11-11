@@ -649,6 +649,10 @@ class Collection_:
             self.root.configure({"foo": "bar"})
             assert self.root.configuration() == {"foo": "bar"}
 
+        def check_init_cfg(self):
+            self.init_cfg = Collection(configuration={"foo": "bar"})
+            assert self.init_cfg.configuration() == {"foo": "bar"}
+
         def access_merges_from_subcollections(self):
             inner = Collection("inner", self.task)
             inner.configure({"foo": "bar"})
