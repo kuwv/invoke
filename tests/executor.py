@@ -1,3 +1,4 @@
+from textwrap import dedent
 from unittest.mock import Mock
 
 import pytest
@@ -138,16 +139,18 @@ class Executor_:
         def chaining_is_depth_first(self):
             expect(
                 "-c depth_first deploy",
-                out="""
-Cleaning HTML
-Cleaning .tar.gz files
-Cleaned everything
-Making directories
-Building
-Deploying
-Preparing for testing
-Testing
-""".lstrip(),
+                out=dedent(
+                    """\
+                    Cleaning HTML
+                    Cleaning .tar.gz files
+                    Cleaned everything
+                    Making directories
+                    Building
+                    Deploying
+                    Preparing for testing
+                    Testing
+                    """
+                ),
             )
 
         def _expect(self, args, expected):
@@ -157,54 +160,62 @@ Testing
             def deduping(self):
                 self._expect(
                     "biz",
-                    """
-foo
-bar
-biz
-post1
-post2
-""",
+                    dedent(
+                        """\
+                        foo
+                        bar
+                        biz
+                        post1
+                        post2
+                        """
+                    ),
                 )
 
             def no_deduping(self):
                 self._expect(
                     "--no-dedupe biz",
-                    """
-foo
-foo
-bar
-biz
-post1
-post2
-post2
-""",
+                    dedent(
+                        """\
+                        foo
+                        foo
+                        bar
+                        biz
+                        post1
+                        post2
+                        post2
+                        """
+                    ),
                 )
 
         class non_adjacent_hooks:
             def deduping(self):
                 self._expect(
                     "boz",
-                    """
-foo
-bar
-boz
-post2
-post1
-""",
+                    dedent(
+                        """
+                        foo
+                        bar
+                        boz
+                        post2
+                        post1
+                        """
+                    ),
                 )
 
             def no_deduping(self):
                 self._expect(
                     "--no-dedupe boz",
-                    """
-foo
-bar
-foo
-boz
-post2
-post1
-post2
-""",
+                    dedent(
+                        """
+                        foo
+                        bar
+                        foo
+                        boz
+                        post2
+                        post1
+                        post2
+                        """
+                    ),
                 )
 
         # AKA, a (foo) (foo -> bar) scenario arising from foo + bar
@@ -212,20 +223,24 @@ post2
             def deduping(self):
                 self._expect(
                     "foo bar",
-                    """
-foo
-bar
-""",
+                    dedent(
+                        """
+                        foo
+                        bar
+                        """
+                    ),
                 )
 
             def no_deduping(self):
                 self._expect(
                     "--no-dedupe foo bar",
-                    """
-foo
-foo
-bar
-""",
+                    dedent(
+                        """
+                        foo
+                        foo
+                        bar
+                        """
+                    ),
                 )
 
         # AKA (foo -> bar) (foo)
@@ -233,20 +248,24 @@ bar
             def deduping(self):
                 self._expect(
                     "foo bar",
-                    """
-foo
-bar
-""",
+                    dedent(
+                        """
+                        foo
+                        bar
+                        """
+                    ),
                 )
 
             def no_deduping(self):
                 self._expect(
                     "--no-dedupe foo bar",
-                    """
-foo
-foo
-bar
-""",
+                    dedent(
+                        """
+                        foo
+                        foo
+                        bar
+                        """
+                    ),
                 )
 
         def deduping_treats_different_calls_to_same_task_differently(self):

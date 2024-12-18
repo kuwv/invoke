@@ -1,4 +1,5 @@
 from queue import Empty, Queue
+from textwrap import dedent
 from threading import Event, Thread
 
 from invoke import FailingResponder, Responder, ResponseNotAccepted
@@ -69,12 +70,14 @@ class Responder_:
 
     def patterns_span_multiple_lines(self):
         r = Responder(pattern=r"call.*problem", response="So sorry")
-        output = """
-You only call me
-when you have a problem
-You never call me
-Just to say hi
-"""
+        output = dedent(
+            """
+            You only call me
+            when you have a problem
+            You never call me
+            Just to say hi
+            """
+        )
         assert list(r.submit(output)) == ["So sorry"]
 
 

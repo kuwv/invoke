@@ -1,6 +1,7 @@
 import os
 import pickle
 from os.path import join
+from textwrap import dedent
 from unittest.mock import Mock, call, patch
 
 import pytest
@@ -105,7 +106,7 @@ class Config_:
                     "out_stream": None,
                     "pty": False,
                     "replace_env": False,
-                    "shell": "/bin/bash",
+                    "shell": "/bin/sh",
                     "warn": False,
                     "watchers": [],
                 },
@@ -238,13 +239,15 @@ class Config_:
             try:
                 c.nope
             except AttributeError as e:
-                expected = """
-No attribute or config key found for 'nope'
+                expected = dedent(
+                    """
+                    No attribute or config key found for 'nope'
 
-Valid keys: ['run', 'runners', 'sudo', 'tasks', 'timeouts']
+                    Valid keys: ['run', 'runners', 'sudo', 'tasks', 'timeouts']
 
-Valid real attributes: ['clear', 'clone', 'env_prefix', 'file_prefix', 'from_data', 'global_defaults', 'load_base_conf_files', 'load_collection', 'load_defaults', 'load_overrides', 'load_project', 'load_runtime', 'load_shell_env', 'load_system', 'load_user', 'merge', 'pop', 'popitem', 'prefix', 'set_project_location', 'set_runtime_path', 'setdefault', 'update']
-""".strip()  # noqa
+                    Valid real attributes: ['clear', 'clone', 'env_prefix', 'file_prefix', 'from_data', 'global_defaults', 'load_base_conf_files', 'load_collection', 'load_defaults', 'load_overrides', 'load_project', 'load_runtime', 'load_shell_env', 'load_system', 'load_user', 'merge', 'pop', 'popitem', 'prefix', 'set_project_location', 'set_runtime_path', 'setdefault', 'update']
+                    """  # noqa
+                ).strip()
                 assert str(e) == expected
             else:
                 assert False, "Didn't get an AttributeError on bad key!"

@@ -3,6 +3,7 @@ import os
 import sys
 from io import BytesIO
 from pathlib import Path
+from textwrap import dedent
 from unittest.mock import ANY, Mock, patch
 
 import pytest
@@ -439,21 +440,24 @@ class Program_:
             # Expect repr() of exception prints to stderr
             # NOTE: this partially duplicates a test in runners.py; whatever.
             stderr = sys.stderr.getvalue()
-            expected = """Encountered a bad command exit code!
+            expected = dedent(
+                """\
+                Encountered a bad command exit code!
 
-Command: 'meh'
+                Command: 'meh'
 
-Exit code: 54
+                Exit code: 54
 
-Stdout:
+                Stdout:
 
-things!
+                things!
 
-Stderr:
+                Stderr:
 
-ohnoz!
+                ohnoz!
 
-"""
+                """
+            )
             assert stderr == expected
             # And exit with expected code (vs e.g. 1 or 0)
             mock_exit.assert_called_with(54)
@@ -568,43 +572,45 @@ this is also not ascii: \xe4\x8c\xa1
                 # TODO: add more unit-y tests for specific behaviors:
                 # * fill terminal w/ columns + spacing
                 # * line-wrap help text in its own column
-                expected = """
-Usage: inv[oke] [--core-opts] task1 [--task1-opts] ... taskN [--taskN-opts]
+                expected = dedent(
+                    """\
+                    Usage: inv[oke] [--core-opts] task1 [--task1-opts] ... taskN [--taskN-opts]
 
-Core options:
+                    Core options:
 
-  --complete                         Print tab-completion candidates for given
-                                     parse remainder.
-  --hide=STRING                      Set default value of run()'s 'hide' kwarg.
-  --no-dedupe                        Disable task deduplication.
-  --print-completion-script=STRING   Print the tab-completion script for your
-                                     preferred shell (bash|zsh|fish).
-  --prompt-for-sudo-password         Prompt user at start of session for the
-                                     sudo.password config value.
-  --write-pyc                        Enable creation of .pyc files.
-  -c STRING, --collection=STRING     Specify collection name to load.
-  -d, --debug                        Enable debug output.
-  -D INT, --list-depth=INT           When listing tasks, only show the first
-                                     INT levels.
-  -e, --echo                         Echo executed commands before running.
-  -f STRING, --config=STRING         Runtime configuration file to use.
-  -F STRING, --list-format=STRING    Change the display format used when
-                                     listing tasks. Should be one of: flat
-                                     (default), nested, json.
-  -h [STRING], --help[=STRING]       Show core or per-task help and exit.
-  -l [STRING], --list[=STRING]       List available tasks, optionally limited
-                                     to a namespace.
-  -p, --pty                          Use a pty when executing shell commands.
-  -r STRING, --search-root=STRING    Change root directory used for finding
-                                     task modules.
-  -R, --dry                          Echo commands instead of running.
-  -T INT, --command-timeout=INT      Specify a global command execution
-                                     timeout, in seconds.
-  -V, --version                      Show version and exit.
-  -w, --warn-only                    Warn, instead of failing, when shell
-                                     commands fail.
+                      --complete                         Print tab-completion candidates for given
+                                                         parse remainder.
+                      --hide=STRING                      Set default value of run()'s 'hide' kwarg.
+                      --no-dedupe                        Disable task deduplication.
+                      --print-completion-script=STRING   Print the tab-completion script for your
+                                                         preferred shell (sh|bash|zsh|fish).
+                      --prompt-for-sudo-password         Prompt user at start of session for the
+                                                         sudo.password config value.
+                      --write-pyc                        Enable creation of .pyc files.
+                      -c STRING, --collection=STRING     Specify collection name to load.
+                      -d, --debug                        Enable debug output.
+                      -D INT, --list-depth=INT           When listing tasks, only show the first
+                                                         INT levels.
+                      -e, --echo                         Echo executed commands before running.
+                      -f STRING, --config=STRING         Runtime configuration file to use.
+                      -F STRING, --list-format=STRING    Change the display format used when
+                                                         listing tasks. Should be one of: flat
+                                                         (default), nested, json.
+                      -h [STRING], --help[=STRING]       Show core or per-task help and exit.
+                      -l [STRING], --list[=STRING]       List available tasks, optionally limited
+                                                         to a namespace.
+                      -p, --pty                          Use a pty when executing shell commands.
+                      -r STRING, --search-root=STRING    Change root directory used for finding
+                                                         task modules.
+                      -R, --dry                          Echo commands instead of running.
+                      -T INT, --command-timeout=INT      Specify a global command execution
+                                                         timeout, in seconds.
+                      -V, --version                      Show version and exit.
+                      -w, --warn-only                    Warn, instead of failing, when shell
+                                                         commands fail.
 
-""".lstrip()
+                    """
+                )
                 for flag in ["-h", "--help"]:
                     expect(flag, out=expected, program=main.program)
 
@@ -638,31 +644,35 @@ Core options:
             "per-task"
 
             def prints_help_for_task_only(self):
-                expected = """
-Usage: invoke [--core-opts] punch [--options] [other tasks here ...]
+                expected = dedent(
+                    """\
+                    Usage: invoke [--core-opts] punch [--options] [other tasks here ...]
 
-Docstring:
-  none
+                    Docstring:
+                      none
 
-Options:
-  -h STRING, --why=STRING   Motive
-  -w STRING, --who=STRING   Who to punch
+                    Options:
+                      -h STRING, --why=STRING   Motive
+                      -w STRING, --who=STRING   Who to punch
 
-""".lstrip()
+                    """
+                )
                 for flag in ["-h", "--help"]:
                     expect("-c decorators {} punch".format(flag), out=expected)
 
             def works_for_unparameterized_tasks(self):
-                expected = """
-Usage: invoke [--core-opts] biz [other tasks here ...]
+                expected = dedent(
+                    """\
+                    Usage: invoke [--core-opts] biz [other tasks here ...]
 
-Docstring:
-  none
+                    Docstring:
+                      none
 
-Options:
-  none
+                    Options:
+                      none
 
-""".lstrip()
+                    """
+                )
                 expect("-c decorators -h biz", out=expected)
 
             def honors_program_binary(self):
@@ -672,66 +682,74 @@ Options:
                 assert "Usage: notinvoke" in stdout
 
             def displays_docstrings_if_given(self):
-                expected = """
-Usage: invoke [--core-opts] foo [other tasks here ...]
+                expected = dedent(
+                    """\
+                    Usage: invoke [--core-opts] foo [other tasks here ...]
 
-Docstring:
-  Foo the bar.
+                    Docstring:
+                      Foo the bar.
 
-Options:
-  none
+                    Options:
+                      none
 
-""".lstrip()
+                    """
+                )
                 expect("-c decorators -h foo", out=expected)
 
             def dedents_correctly(self):
-                expected = """
-Usage: invoke [--core-opts] foo2 [other tasks here ...]
+                expected = dedent(
+                    """\
+                    Usage: invoke [--core-opts] foo2 [other tasks here ...]
 
-Docstring:
-  Foo the bar:
+                    Docstring:
+                      Foo the bar:
 
-    example code
+                        example code
 
-  Added in 1.0
+                      Added in 1.0
 
-Options:
-  none
+                    Options:
+                      none
 
-""".lstrip()
+                    """
+                )
                 expect("-c decorators -h foo2", out=expected)
 
             def dedents_correctly_for_alt_docstring_style(self):
-                expected = """
-Usage: invoke [--core-opts] foo3 [other tasks here ...]
+                expected = dedent(
+                    """\
+                    Usage: invoke [--core-opts] foo3 [other tasks here ...]
 
-Docstring:
-  Foo the other bar:
+                    Docstring:
+                      Foo the other bar:
 
-    example code
+                        example code
 
-  Added in 1.1
+                      Added in 1.1
 
-Options:
-  none
+                    Options:
+                      none
 
-""".lstrip()
+                    """
+                )
                 expect("-c decorators -h foo3", out=expected)
 
             def exits_after_printing(self):
                 # TODO: find & test the other variants of this error case, such
                 # as core --help not exiting, --list not exiting, etc
-                expected = """
-Usage: invoke [--core-opts] punch [--options] [other tasks here ...]
+                expected = dedent(
+                    """\
+                    Usage: invoke [--core-opts] punch [--options] [other tasks here ...]
 
-Docstring:
-  none
+                    Docstring:
+                      none
 
-Options:
-  -h STRING, --why=STRING   Motive
-  -w STRING, --who=STRING   Who to punch
+                    Options:
+                      -h STRING, --why=STRING   Motive
+                      -w STRING, --who=STRING   Who to punch
 
-""".lstrip()
+                    """
+                )
                 expect("-c decorators -h punch --list", out=expected)
 
             def complains_if_given_invalid_task_name(self):
@@ -741,14 +759,14 @@ Options:
         "--list"
 
         def _listing(self, lines):
-            return """
-Available tasks:
+            return dedent(
+                """\
+                Available tasks:
 
-{}
+                {}
 
-""".format(
-                "\n".join("  " + x for x in lines)
-            ).lstrip()
+                """
+            ).format("\n".join("  " + x for x in lines))
 
         def _list_eq(self, collection, listing):
             cmd = "-c {} --list".format(collection)
@@ -825,63 +843,72 @@ Available tasks:
             # before any 3rd-level ones.
             # The code must square that concern against "show shallow tasks
             # before deep ones" (vs straight up alpha sorting)
-            expected = """Available tasks:
+            expected = dedent(
+                """\
+                Available tasks:
 
-  shell (ipython)                       Load a REPL with project state already
-                                        set up.
-  test (run-tests)                      Run the test suite with baked-in args.
-  build.all (build, build.everything)   Build all necessary artifacts.
-  build.c-ext (build.ext)               Build our internal C extension.
-  build.zap                             A silly way to clean.
-  build.docs.all (build.docs)           Build all doc formats.
-  build.docs.html                       Build HTML output only.
-  build.docs.pdf                        Build PDF output only.
-  build.python.all (build.python)       Build all Python packages.
-  build.python.sdist                    Build classic style tar.gz.
-  build.python.wheel                    Build a wheel.
-  deploy.db (deploy.db-servers)         Deploy to our database servers.
-  deploy.everywhere (deploy)            Deploy to all targets.
-  deploy.web                            Update and bounce the webservers.
-  provision.db                          Stand up one or more DB servers.
-  provision.web                         Stand up a Web server.
+                  shell (ipython)                       Load a REPL with project state already
+                                                        set up.
+                  test (run-tests)                      Run the test suite with baked-in args.
+                  build.all (build, build.everything)   Build all necessary artifacts.
+                  build.c-ext (build.ext)               Build our internal C extension.
+                  build.zap                             A silly way to clean.
+                  build.docs.all (build.docs)           Build all doc formats.
+                  build.docs.html                       Build HTML output only.
+                  build.docs.pdf                        Build PDF output only.
+                  build.python.all (build.python)       Build all Python packages.
+                  build.python.sdist                    Build classic style tar.gz.
+                  build.python.wheel                    Build a wheel.
+                  deploy.db (deploy.db-servers)         Deploy to our database servers.
+                  deploy.everywhere (deploy)            Deploy to all targets.
+                  deploy.web                            Update and bounce the webservers.
+                  provision.db                          Stand up one or more DB servers.
+                  provision.web                         Stand up a Web server.
 
-Default task: test
+                Default task: test
 
-"""
+                """
+            )
             stdout, _ = run("-c tree --list")
             assert expected == stdout
 
         class namespace_limiting:
             def argument_limits_display_to_given_namespace(self):
                 stdout, _ = run("-c tree --list build")
-                expected = """Available 'build' tasks:
+                expected = dedent(
+                    """\
+                    Available 'build' tasks:
 
-  .all (.everything)      Build all necessary artifacts.
-  .c-ext (.ext)           Build our internal C extension.
-  .zap                    A silly way to clean.
-  .docs.all (.docs)       Build all doc formats.
-  .docs.html              Build HTML output only.
-  .docs.pdf               Build PDF output only.
-  .python.all (.python)   Build all Python packages.
-  .python.sdist           Build classic style tar.gz.
-  .python.wheel           Build a wheel.
+                      .all (.everything)      Build all necessary artifacts.
+                      .c-ext (.ext)           Build our internal C extension.
+                      .zap                    A silly way to clean.
+                      .docs.all (.docs)       Build all doc formats.
+                      .docs.html              Build HTML output only.
+                      .docs.pdf               Build PDF output only.
+                      .python.all (.python)   Build all Python packages.
+                      .python.sdist           Build classic style tar.gz.
+                      .python.wheel           Build a wheel.
 
-Default 'build' task: .all
+                    Default 'build' task: .all
 
-"""
+                    """
+                )
                 assert expected == stdout
 
             def argument_may_be_a_nested_namespace(self):
                 stdout, _ = run("-c tree --list build.docs")
-                expected = """Available 'build.docs' tasks:
+                expected = dedent(
+                    """\
+                    Available 'build.docs' tasks:
 
-  .all    Build all doc formats.
-  .html   Build HTML output only.
-  .pdf    Build PDF output only.
+                      .all    Build all doc formats.
+                      .html   Build HTML output only.
+                      .pdf    Build PDF output only.
 
-Default 'build.docs' task: .all
+                    Default 'build.docs' task: .all
 
-"""
+                    """
+                )
                 assert expected == stdout
 
             def empty_namespaces_say_no_tasks_in_namespace(self):
@@ -904,128 +931,146 @@ Default 'build.docs' task: .all
         class depth_limiting:
             def limits_display_to_given_depth(self):
                 # Base case: depth=1 aka "show me the namespaces"
-                expected = """Available tasks (depth=1):
+                expected = dedent(
+                    """\
+                    Available tasks (depth=1):
 
-  shell (ipython)                  Load a REPL with project state already set
-                                   up.
-  test (run-tests)                 Run the test suite with baked-in args.
-  build [3 tasks, 2 collections]   Tasks for compiling static code and assets.
-  deploy [3 tasks]                 How to deploy our code and configs.
-  provision [2 tasks]              System setup code.
+                      shell (ipython)                  Load a REPL with project state already set
+                                                       up.
+                      test (run-tests)                 Run the test suite with baked-in args.
+                      build [3 tasks, 2 collections]   Tasks for compiling static code and assets.
+                      deploy [3 tasks]                 How to deploy our code and configs.
+                      provision [2 tasks]              System setup code.
 
-Default task: test
+                    Default task: test
 
-"""
+                    """
+                )
                 stdout, _ = run("-c tree --list -F flat --list-depth 1")
                 assert expected == stdout
 
             def non_base_case(self):
                 # Middle case: depth=2
-                expected = """Available tasks (depth=2):
+                expected = dedent(
+                    """\
+                    Available tasks (depth=2):
 
-  shell (ipython)                       Load a REPL with project state already
-                                        set up.
-  test (run-tests)                      Run the test suite with baked-in args.
-  build.all (build, build.everything)   Build all necessary artifacts.
-  build.c-ext (build.ext)               Build our internal C extension.
-  build.zap                             A silly way to clean.
-  build.docs [3 tasks]                  Tasks for managing Sphinx docs.
-  build.python [3 tasks]                PyPI/etc distribution artifacts.
-  deploy.db (deploy.db-servers)         Deploy to our database servers.
-  deploy.everywhere (deploy)            Deploy to all targets.
-  deploy.web                            Update and bounce the webservers.
-  provision.db                          Stand up one or more DB servers.
-  provision.web                         Stand up a Web server.
+                      shell (ipython)                       Load a REPL with project state already
+                                                            set up.
+                      test (run-tests)                      Run the test suite with baked-in args.
+                      build.all (build, build.everything)   Build all necessary artifacts.
+                      build.c-ext (build.ext)               Build our internal C extension.
+                      build.zap                             A silly way to clean.
+                      build.docs [3 tasks]                  Tasks for managing Sphinx docs.
+                      build.python [3 tasks]                PyPI/etc distribution artifacts.
+                      deploy.db (deploy.db-servers)         Deploy to our database servers.
+                      deploy.everywhere (deploy)            Deploy to all targets.
+                      deploy.web                            Update and bounce the webservers.
+                      provision.db                          Stand up one or more DB servers.
+                      provision.web                         Stand up a Web server.
 
-Default task: test
+                    Default task: test
 
-"""
+                    """
+                )
                 stdout, _ = run("-c tree --list --list-depth=2")
                 assert expected == stdout
 
             def depth_can_be_deeper_than_real_depth(self):
                 # Edge case: depth > actual depth = same as no depth arg
-                expected = """Available tasks (depth=5):
+                expected = dedent(
+                    """\
+                    Available tasks (depth=5):
 
-  shell (ipython)                       Load a REPL with project state already
-                                        set up.
-  test (run-tests)                      Run the test suite with baked-in args.
-  build.all (build, build.everything)   Build all necessary artifacts.
-  build.c-ext (build.ext)               Build our internal C extension.
-  build.zap                             A silly way to clean.
-  build.docs.all (build.docs)           Build all doc formats.
-  build.docs.html                       Build HTML output only.
-  build.docs.pdf                        Build PDF output only.
-  build.python.all (build.python)       Build all Python packages.
-  build.python.sdist                    Build classic style tar.gz.
-  build.python.wheel                    Build a wheel.
-  deploy.db (deploy.db-servers)         Deploy to our database servers.
-  deploy.everywhere (deploy)            Deploy to all targets.
-  deploy.web                            Update and bounce the webservers.
-  provision.db                          Stand up one or more DB servers.
-  provision.web                         Stand up a Web server.
+                      shell (ipython)                       Load a REPL with project state already
+                                                            set up.
+                      test (run-tests)                      Run the test suite with baked-in args.
+                      build.all (build, build.everything)   Build all necessary artifacts.
+                      build.c-ext (build.ext)               Build our internal C extension.
+                      build.zap                             A silly way to clean.
+                      build.docs.all (build.docs)           Build all doc formats.
+                      build.docs.html                       Build HTML output only.
+                      build.docs.pdf                        Build PDF output only.
+                      build.python.all (build.python)       Build all Python packages.
+                      build.python.sdist                    Build classic style tar.gz.
+                      build.python.wheel                    Build a wheel.
+                      deploy.db (deploy.db-servers)         Deploy to our database servers.
+                      deploy.everywhere (deploy)            Deploy to all targets.
+                      deploy.web                            Update and bounce the webservers.
+                      provision.db                          Stand up one or more DB servers.
+                      provision.web                         Stand up a Web server.
 
-Default task: test
+                    Default task: test
 
-"""
+                    """
+                )
                 stdout, _ = run("-c tree --list --list-depth=5")
                 assert expected == stdout
 
             def works_with_explicit_namespace(self):
-                expected = """Available 'build' tasks (depth=1):
+                expected = dedent(
+                    """\
+                    Available 'build' tasks (depth=1):
 
-  .all (.everything)   Build all necessary artifacts.
-  .c-ext (.ext)        Build our internal C extension.
-  .zap                 A silly way to clean.
-  .docs [3 tasks]      Tasks for managing Sphinx docs.
-  .python [3 tasks]    PyPI/etc distribution artifacts.
+                      .all (.everything)   Build all necessary artifacts.
+                      .c-ext (.ext)        Build our internal C extension.
+                      .zap                 A silly way to clean.
+                      .docs [3 tasks]      Tasks for managing Sphinx docs.
+                      .python [3 tasks]    PyPI/etc distribution artifacts.
 
-Default 'build' task: .all
+                    Default 'build' task: .all
 
-"""
+                    """
+                )
                 stdout, _ = run("-c tree --list build --list-depth=1")
                 assert expected == stdout
 
             def short_flag_is_D(self):
-                expected = """Available tasks (depth=1):
+                expected = dedent(
+                    """\
+                    Available tasks (depth=1):
 
-  shell (ipython)                  Load a REPL with project state already set
-                                   up.
-  test (run-tests)                 Run the test suite with baked-in args.
-  build [3 tasks, 2 collections]   Tasks for compiling static code and assets.
-  deploy [3 tasks]                 How to deploy our code and configs.
-  provision [2 tasks]              System setup code.
+                      shell (ipython)                  Load a REPL with project state already set
+                                                       up.
+                      test (run-tests)                 Run the test suite with baked-in args.
+                      build [3 tasks, 2 collections]   Tasks for compiling static code and assets.
+                      deploy [3 tasks]                 How to deploy our code and configs.
+                      provision [2 tasks]              System setup code.
 
-Default task: test
+                    Default task: test
 
-"""
+                    """
+                )
                 stdout, _ = run("-c tree --list --list-format=flat -D 1")
                 assert expected == stdout
 
             def depth_of_zero_is_same_as_max_depth(self):
-                expected = """Available tasks:
+                expected = dedent(
+                    """\
+                    Available tasks:
 
-  shell (ipython)                       Load a REPL with project state already
-                                        set up.
-  test (run-tests)                      Run the test suite with baked-in args.
-  build.all (build, build.everything)   Build all necessary artifacts.
-  build.c-ext (build.ext)               Build our internal C extension.
-  build.zap                             A silly way to clean.
-  build.docs.all (build.docs)           Build all doc formats.
-  build.docs.html                       Build HTML output only.
-  build.docs.pdf                        Build PDF output only.
-  build.python.all (build.python)       Build all Python packages.
-  build.python.sdist                    Build classic style tar.gz.
-  build.python.wheel                    Build a wheel.
-  deploy.db (deploy.db-servers)         Deploy to our database servers.
-  deploy.everywhere (deploy)            Deploy to all targets.
-  deploy.web                            Update and bounce the webservers.
-  provision.db                          Stand up one or more DB servers.
-  provision.web                         Stand up a Web server.
+                      shell (ipython)                       Load a REPL with project state already
+                                                            set up.
+                      test (run-tests)                      Run the test suite with baked-in args.
+                      build.all (build, build.everything)   Build all necessary artifacts.
+                      build.c-ext (build.ext)               Build our internal C extension.
+                      build.zap                             A silly way to clean.
+                      build.docs.all (build.docs)           Build all doc formats.
+                      build.docs.html                       Build HTML output only.
+                      build.docs.pdf                        Build PDF output only.
+                      build.python.all (build.python)       Build all Python packages.
+                      build.python.sdist                    Build classic style tar.gz.
+                      build.python.wheel                    Build a wheel.
+                      deploy.db (deploy.db-servers)         Deploy to our database servers.
+                      deploy.everywhere (deploy)            Deploy to all targets.
+                      deploy.web                            Update and bounce the webservers.
+                      provision.db                          Stand up one or more DB servers.
+                      provision.web                         Stand up a Web server.
 
-Default task: test
+                    Default task: test
 
-"""
+                    """
+                )
                 stdout, _ = run("-c tree --list --list-format=flat -D 0")
                 assert expected == stdout
 
@@ -1033,153 +1078,171 @@ Default task: test
             def flat_is_legacy_default_format(self):
                 # Sanity test that --list --list-format=flat is the same as the
                 # old "just --list".
-                expected = """Available tasks:
+                expected = dedent(
+                    """\
+                    Available tasks:
 
-  shell (ipython)                       Load a REPL with project state already
-                                        set up.
-  test (run-tests)                      Run the test suite with baked-in args.
-  build.all (build, build.everything)   Build all necessary artifacts.
-  build.c-ext (build.ext)               Build our internal C extension.
-  build.zap                             A silly way to clean.
-  build.docs.all (build.docs)           Build all doc formats.
-  build.docs.html                       Build HTML output only.
-  build.docs.pdf                        Build PDF output only.
-  build.python.all (build.python)       Build all Python packages.
-  build.python.sdist                    Build classic style tar.gz.
-  build.python.wheel                    Build a wheel.
-  deploy.db (deploy.db-servers)         Deploy to our database servers.
-  deploy.everywhere (deploy)            Deploy to all targets.
-  deploy.web                            Update and bounce the webservers.
-  provision.db                          Stand up one or more DB servers.
-  provision.web                         Stand up a Web server.
+                      shell (ipython)                       Load a REPL with project state already
+                                                            set up.
+                      test (run-tests)                      Run the test suite with baked-in args.
+                      build.all (build, build.everything)   Build all necessary artifacts.
+                      build.c-ext (build.ext)               Build our internal C extension.
+                      build.zap                             A silly way to clean.
+                      build.docs.all (build.docs)           Build all doc formats.
+                      build.docs.html                       Build HTML output only.
+                      build.docs.pdf                        Build PDF output only.
+                      build.python.all (build.python)       Build all Python packages.
+                      build.python.sdist                    Build classic style tar.gz.
+                      build.python.wheel                    Build a wheel.
+                      deploy.db (deploy.db-servers)         Deploy to our database servers.
+                      deploy.everywhere (deploy)            Deploy to all targets.
+                      deploy.web                            Update and bounce the webservers.
+                      provision.db                          Stand up one or more DB servers.
+                      provision.web                         Stand up a Web server.
 
-Default task: test
+                    Default task: test
 
-"""
+                    """
+                )
                 stdout, _ = run("-c tree --list --list-format=flat")
                 assert expected == stdout
 
             class nested:
                 def base_case(self):
-                    expected = """Available tasks ('*' denotes collection defaults):
+                    expected = dedent(
+                        """\
+                        Available tasks ('*' denotes collection defaults):
 
-  shell (ipython)           Load a REPL with project state already set up.
-  test* (run-tests)         Run the test suite with baked-in args.
-  build                     Tasks for compiling static code and assets.
-      .all* (.everything)   Build all necessary artifacts.
-      .c-ext (.ext)         Build our internal C extension.
-      .zap                  A silly way to clean.
-      .docs                 Tasks for managing Sphinx docs.
-          .all*             Build all doc formats.
-          .html             Build HTML output only.
-          .pdf              Build PDF output only.
-      .python               PyPI/etc distribution artifacts.
-          .all*             Build all Python packages.
-          .sdist            Build classic style tar.gz.
-          .wheel            Build a wheel.
-  deploy                    How to deploy our code and configs.
-      .db (.db-servers)     Deploy to our database servers.
-      .everywhere*          Deploy to all targets.
-      .web                  Update and bounce the webservers.
-  provision                 System setup code.
-      .db                   Stand up one or more DB servers.
-      .web                  Stand up a Web server.
+                          shell (ipython)           Load a REPL with project state already set up.
+                          test* (run-tests)         Run the test suite with baked-in args.
+                          build                     Tasks for compiling static code and assets.
+                              .all* (.everything)   Build all necessary artifacts.
+                              .c-ext (.ext)         Build our internal C extension.
+                              .zap                  A silly way to clean.
+                              .docs                 Tasks for managing Sphinx docs.
+                                  .all*             Build all doc formats.
+                                  .html             Build HTML output only.
+                                  .pdf              Build PDF output only.
+                              .python               PyPI/etc distribution artifacts.
+                                  .all*             Build all Python packages.
+                                  .sdist            Build classic style tar.gz.
+                                  .wheel            Build a wheel.
+                          deploy                    How to deploy our code and configs.
+                              .db (.db-servers)     Deploy to our database servers.
+                              .everywhere*          Deploy to all targets.
+                              .web                  Update and bounce the webservers.
+                          provision                 System setup code.
+                              .db                   Stand up one or more DB servers.
+                              .web                  Stand up a Web server.
 
-Default task: test
+                        Default task: test
 
-"""
+                        """
+                    )
                     stdout, _ = run("-c tree -l -F nested")
                     assert expected == stdout
 
                 def honors_namespace_arg_to_list(self):
                     stdout, _ = run("-c tree --list build -F nested")
-                    expected = """Available 'build' tasks ('*' denotes collection defaults):
+                    expected = dedent(
+                        """\
+                        Available 'build' tasks ('*' denotes collection defaults):
 
-  .all* (.everything)   Build all necessary artifacts.
-  .c-ext (.ext)         Build our internal C extension.
-  .zap                  A silly way to clean.
-  .docs                 Tasks for managing Sphinx docs.
-      .all*             Build all doc formats.
-      .html             Build HTML output only.
-      .pdf              Build PDF output only.
-  .python               PyPI/etc distribution artifacts.
-      .all*             Build all Python packages.
-      .sdist            Build classic style tar.gz.
-      .wheel            Build a wheel.
+                          .all* (.everything)   Build all necessary artifacts.
+                          .c-ext (.ext)         Build our internal C extension.
+                          .zap                  A silly way to clean.
+                          .docs                 Tasks for managing Sphinx docs.
+                              .all*             Build all doc formats.
+                              .html             Build HTML output only.
+                              .pdf              Build PDF output only.
+                          .python               PyPI/etc distribution artifacts.
+                              .all*             Build all Python packages.
+                              .sdist            Build classic style tar.gz.
+                              .wheel            Build a wheel.
 
-Default 'build' task: .all
+                        Default 'build' task: .all
 
-"""
+                        """
+                    )
                     assert expected == stdout
 
                 def honors_depth_arg(self):
-                    expected = """Available tasks (depth=2; '*' denotes collection defaults):
+                    expected = dedent(
+                        """\
+                        Available tasks (depth=2; '*' denotes collection defaults):
 
-  shell (ipython)           Load a REPL with project state already set up.
-  test* (run-tests)         Run the test suite with baked-in args.
-  build                     Tasks for compiling static code and assets.
-      .all* (.everything)   Build all necessary artifacts.
-      .c-ext (.ext)         Build our internal C extension.
-      .zap                  A silly way to clean.
-      .docs [3 tasks]       Tasks for managing Sphinx docs.
-      .python [3 tasks]     PyPI/etc distribution artifacts.
-  deploy                    How to deploy our code and configs.
-      .db (.db-servers)     Deploy to our database servers.
-      .everywhere*          Deploy to all targets.
-      .web                  Update and bounce the webservers.
-  provision                 System setup code.
-      .db                   Stand up one or more DB servers.
-      .web                  Stand up a Web server.
+                          shell (ipython)           Load a REPL with project state already set up.
+                          test* (run-tests)         Run the test suite with baked-in args.
+                          build                     Tasks for compiling static code and assets.
+                              .all* (.everything)   Build all necessary artifacts.
+                              .c-ext (.ext)         Build our internal C extension.
+                              .zap                  A silly way to clean.
+                              .docs [3 tasks]       Tasks for managing Sphinx docs.
+                              .python [3 tasks]     PyPI/etc distribution artifacts.
+                          deploy                    How to deploy our code and configs.
+                              .db (.db-servers)     Deploy to our database servers.
+                              .everywhere*          Deploy to all targets.
+                              .web                  Update and bounce the webservers.
+                          provision                 System setup code.
+                              .db                   Stand up one or more DB servers.
+                              .web                  Stand up a Web server.
 
-Default task: test
+                        Default task: test
 
-"""
+                        """
+                    )
                     stdout, _ = run("-c tree -l -F nested --list-depth 2")
                     assert expected == stdout
 
                 def depth_arg_deeper_than_real_depth(self):
-                    expected = """Available tasks (depth=5; '*' denotes collection defaults):
+                    expected = dedent(
+                        """\
+                        Available tasks (depth=5; '*' denotes collection defaults):
 
-  shell (ipython)           Load a REPL with project state already set up.
-  test* (run-tests)         Run the test suite with baked-in args.
-  build                     Tasks for compiling static code and assets.
-      .all* (.everything)   Build all necessary artifacts.
-      .c-ext (.ext)         Build our internal C extension.
-      .zap                  A silly way to clean.
-      .docs                 Tasks for managing Sphinx docs.
-          .all*             Build all doc formats.
-          .html             Build HTML output only.
-          .pdf              Build PDF output only.
-      .python               PyPI/etc distribution artifacts.
-          .all*             Build all Python packages.
-          .sdist            Build classic style tar.gz.
-          .wheel            Build a wheel.
-  deploy                    How to deploy our code and configs.
-      .db (.db-servers)     Deploy to our database servers.
-      .everywhere*          Deploy to all targets.
-      .web                  Update and bounce the webservers.
-  provision                 System setup code.
-      .db                   Stand up one or more DB servers.
-      .web                  Stand up a Web server.
+                          shell (ipython)           Load a REPL with project state already set up.
+                          test* (run-tests)         Run the test suite with baked-in args.
+                          build                     Tasks for compiling static code and assets.
+                              .all* (.everything)   Build all necessary artifacts.
+                              .c-ext (.ext)         Build our internal C extension.
+                              .zap                  A silly way to clean.
+                              .docs                 Tasks for managing Sphinx docs.
+                                  .all*             Build all doc formats.
+                                  .html             Build HTML output only.
+                                  .pdf              Build PDF output only.
+                              .python               PyPI/etc distribution artifacts.
+                                  .all*             Build all Python packages.
+                                  .sdist            Build classic style tar.gz.
+                                  .wheel            Build a wheel.
+                          deploy                    How to deploy our code and configs.
+                              .db (.db-servers)     Deploy to our database servers.
+                              .everywhere*          Deploy to all targets.
+                              .web                  Update and bounce the webservers.
+                          provision                 System setup code.
+                              .db                   Stand up one or more DB servers.
+                              .web                  Stand up a Web server.
 
-Default task: test
+                        Default task: test
 
-"""
+                        """
+                    )
                     stdout, _ = run("-c tree -l -F nested --list-depth 5")
                     assert expected == stdout
 
                 def all_possible_options(self):
-                    expected = """Available 'build' tasks (depth=1; '*' denotes collection defaults):
+                    expected = dedent(
+                        """\
+                        Available 'build' tasks (depth=1; '*' denotes collection defaults):
 
-  .all* (.everything)   Build all necessary artifacts.
-  .c-ext (.ext)         Build our internal C extension.
-  .zap                  A silly way to clean.
-  .docs [3 tasks]       Tasks for managing Sphinx docs.
-  .python [3 tasks]     PyPI/etc distribution artifacts.
+                          .all* (.everything)   Build all necessary artifacts.
+                          .c-ext (.ext)         Build our internal C extension.
+                          .zap                  A silly way to clean.
+                          .docs [3 tasks]       Tasks for managing Sphinx docs.
+                          .python [3 tasks]     PyPI/etc distribution artifacts.
 
-Default 'build' task: .all
+                        Default 'build' task: .all
 
-"""
+                        """
+                    )
                     stdout, _ = run("-c tree -l build -F nested -D1")
                     assert expected == stdout
 
@@ -1344,28 +1407,32 @@ Default 'build' task: .all
                 # Runtime conf file
                 expect(
                     "-c integration -f no-dedupe.yaml biz",
-                    out="""
-foo
-foo
-bar
-biz
-post1
-post2
-post2
-""".lstrip(),
+                    out=dedent(
+                        """\
+                        foo
+                        foo
+                        bar
+                        biz
+                        post1
+                        post2
+                        post2
+                        """
+                    ),
                 )
                 # Flag beats runtime
                 expect(
                     "-c integration -f dedupe.yaml --no-dedupe biz",
-                    out="""
-foo
-foo
-bar
-biz
-post1
-post2
-post2
-""".lstrip(),
+                    out=dedent(
+                        """\
+                        foo
+                        foo
+                        bar
+                        biz
+                        post1
+                        post2
+                        post2
+                        """
+                    ),
                 )
 
         # * debug (top level?)

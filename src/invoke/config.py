@@ -432,16 +432,16 @@ class Config(DataProxy):
 
         .. versionadded:: 1.0
         """
-        # On Windows, which won't have /bin/bash, check for a set COMSPEC env
+        # On Windows, which won't have /bin/sh, check for a set COMSPEC env
         # var (https://en.wikipedia.org/wiki/COMSPEC) or fallback to an
         # unqualified cmd.exe otherwise.
         if WINDOWS:
             shell = os.environ.get("COMSPEC", "cmd.exe")
-        # Else, assume Unix, most distros of which have /bin/bash available.
+        # Else, assume Unix, most distros of which have /bin/sh available.
         # TODO: consider an automatic fallback to /bin/sh for systems lacking
-        # /bin/bash; however users may configure run.shell quite easily, so...
+        # /bin/sh; however users may configure run.shell quite easily, so...
         else:
-            shell = "/bin/bash"
+            shell = "/bin/sh"
 
         return {
             # TODO: we document 'debug' but it's not truly implemented outside
