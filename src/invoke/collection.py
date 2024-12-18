@@ -1,6 +1,6 @@
 import copy
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from lexicon import Lexicon
 
@@ -289,7 +289,7 @@ class Collection:
 
     def add_collection(
         self,
-        coll: "Collection",
+        coll: Union["Collection", ModuleType],
         name: Optional[str] = None,
         default: Optional[bool] = None,
     ) -> None:
