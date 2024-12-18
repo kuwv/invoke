@@ -1,6 +1,6 @@
 from pytest import raises
 
-from invoke.config import merge_dicts, copy_dict, AmbiguousMergeError
+from invoke.config import AmbiguousMergeError, copy_dict, merge_dicts
 
 
 class merge_dicts_:

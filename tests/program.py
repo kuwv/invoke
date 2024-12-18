@@ -3,10 +3,10 @@ import os
 import sys
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import ANY, Mock, patch
 
-from invoke.util import Lexicon
-from unittest.mock import patch, Mock, ANY
 import pytest
+from lexicon import Lexicon
 from pytest import skip
 from pytest_relaxed import trap
 
@@ -23,10 +23,10 @@ from invoke import (
     Result,
     Task,
     UnexpectedExit,
+    main,
 )
-from invoke import main
-from invoke.util import cd
 from invoke.config import merge_dicts
+from invoke.util import cd
 
 from _util import (
     ROOT,
@@ -34,11 +34,10 @@ from _util import (
     load,
     run,
     skip_if_windows,
+    support,
     support_file,
     support_path,
-    support,
 )
-
 
 pytestmark = pytest.mark.usefixtures("integration")
 
@@ -229,12 +228,12 @@ class Program_:
         def complains_when_default_collection_not_found(self):
             # NOTE: assumes system under test has no tasks.py in root. Meh.
             with cd(ROOT):
-                expect("-l", err="Can't find any collection named 'tasks'!\n")
+                expect("-l", err="Cannot find any collection named 'tasks'!\n")
 
         def complains_when_explicit_collection_not_found(self):
             expect(
                 "-c huhwhat -l",
-                err="Can't find any collection named 'huhwhat'!\n",
+                err="Cannot find any collection named 'huhwhat'!\n",
             )
 
         @trap

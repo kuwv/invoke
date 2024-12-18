@@ -1,12 +1,10 @@
 import os
 import sys
 
-from invoke import Program, task, Collection
-
 import pytest
+from _util import ROOT, expect, trap
 
-from _util import expect, trap, ROOT
-
+from invoke import Collection, Program, task
 
 pytestmark = pytest.mark.usefixtures("integration")
 

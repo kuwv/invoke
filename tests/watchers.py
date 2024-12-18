@@ -1,8 +1,7 @@
-from queue import Queue, Empty
-from threading import Thread, Event
+from queue import Empty, Queue
+from threading import Event, Thread
 
-from invoke import Responder, FailingResponder, ResponseNotAccepted
-
+from invoke import FailingResponder, Responder, ResponseNotAccepted
 
 # NOTE: StreamWatcher is basically just an interface/protocol; no behavior to
 # test of its own. So this file tests Responder primarily, and some subclasses.

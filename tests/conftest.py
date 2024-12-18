@@ -2,10 +2,9 @@ import logging
 import os
 import sys
 import termios
-
-import pytest
 from unittest.mock import patch
 
+import pytest
 from _util import support
 
 # Set up icecream globally for convenience.

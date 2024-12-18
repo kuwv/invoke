@@ -1,5 +1,5 @@
-from invoke.tasks import task
 from invoke.collection import Collection
+from invoke.tasks import task
 
 
 @task

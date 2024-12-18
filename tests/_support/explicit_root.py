@@ -2,7 +2,7 @@
 EXPLICIT LYRICS
 """
 
-from invoke import task, Collection
+from invoke import Collection, task
 
 
 @task(aliases=["other_top"])

@@ -1,12 +1,11 @@
 import re
-
 from unittest.mock import patch
 
 import invoke
 import invoke.collection
 import invoke.exceptions
-import invoke.tasks
 import invoke.program
+import invoke.tasks
 
 
 class Init:

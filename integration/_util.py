@@ -1,9 +1,8 @@
-from contextlib import contextmanager
-from functools import wraps
-from resource import getrusage, RUSAGE_SELF
 import sys
 import time
-
+from contextlib import contextmanager
+from functools import wraps
+from resource import RUSAGE_SELF, getrusage
 
 from pytest import skip
 

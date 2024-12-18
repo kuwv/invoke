@@ -1,4 +1,4 @@
-from invoke import ctask, Collection
+from invoke import Collection, ctask
 
 
 @ctask

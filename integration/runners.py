@@ -1,24 +1,22 @@
 import os
 import platform
 import time
-
 from unittest.mock import Mock
-from pytest import skip, raises
-
-from invoke import (
-    run,
-    Local,
-    Context,
-    ThreadException,
-    Responder,
-    FailingResponder,
-    WatcherError,
-    Failure,
-    CommandTimedOut,
-)
 
 from _util import assert_cpu_usage
+from pytest import raises, skip
 
+from invoke import (
+    CommandTimedOut,
+    Context,
+    FailingResponder,
+    Failure,
+    Local,
+    Responder,
+    ThreadException,
+    WatcherError,
+    run,
+)
 
 PYPY = platform.python_implementation() == "PyPy"
 

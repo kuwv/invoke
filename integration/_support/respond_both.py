@@ -1,6 +1,5 @@
 import sys
 
-
 if input("standard out") != "with it":
     sys.exit(1)
 

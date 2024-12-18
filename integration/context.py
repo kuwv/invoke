@@ -1,5 +1,6 @@
-from invoke import Context, Config
 from invocations import ci as ci_mod
+
+from invoke import Config, Context
 
 
 class Context_:

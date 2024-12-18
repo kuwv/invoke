@@ -1,6 +1,7 @@
 from queue import Queue
 
-from invoke.util import ExceptionWrapper, ExceptionHandlingThread as EHThread
+from invoke.util import ExceptionHandlingThread as EHThread
+from invoke.util import ExceptionWrapper
 
 
 # TODO: rename

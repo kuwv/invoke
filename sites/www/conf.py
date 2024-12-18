@@ -1,7 +1,7 @@
 # Obtain shared config values
-import sys
 import os
-from os.path import abspath, join, dirname
+import sys
+from os.path import abspath, dirname, join
 
 sys.path.append(abspath(join(dirname(__file__), "..")))
 from shared_conf import *

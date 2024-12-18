@@ -1,3 +1,157 @@
+[build-system]
+requires = ["setuptools>=51.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tinker-invoke"
+version = "2.2.1"
+description = "Pythonic task execution"
+# keywords = ["automation", "task runner"]
+authors = [
+    {name="Jeff Forcier", email="jeff@bitprophet.org"},
+    {name="Jesse P Johnson", email="jpj6652@gmail.com"}
+]
+maintainers = [{name="Jesse P Johnson", email="jpj6652@gmail.com"}]
+requires-python = ">=3.7.0"
+readme = "README.rst"
+license = {file = "LICENSE"}
+classifiers=[
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Software Distribution",
+    "Topic :: System :: Systems Administration"
+]
+dependencies = [
+    "lexicon",
+    "PyYAML"
+]
+
+[project.optional-dependencies]
+dev = [
+    # Invocations, for all sorts of things
+    # "invocations>=3.0.1",
+    # Coverage!
+    "coverage[toml]>=6.2,<7",
+    "codecov>=2.1.12",
+    # Docs
+    "releases>=2",
+    "alabaster==0.7.12",
+    # Testing
+    "pytest>=7",
+    "pytest-relaxed>=2",
+    "pytest-cov>=4",
+    # Linting
+    "pylint>=3",
+    # Formatting
+    # Flake8 5.x seems to have an odd importlib-metadata incompatibility?
+    "flake8>=4,<5",
+    "isort>=5.10.1",
+    "black>=22.8,<22.9",
+    # Typing
+    "mypy",
+    "types-PyYAML==6.0.12.4",
+    # Debuggery
+    "icecream>=2.1",
+    # Publish
+    "twine>=1.15"
+    # SCA/SAST
+    # "bandit>=1.6.2",
+    # "safety>=1.9.0"
+]
+
+[project.scripts]
+invoke = "invoke.main:program.run"
+inv = "invoke.main:program.run"
+
+[project.urls]
+homepage = "http://www.pyinvoke.org/"
+changelog = "https://www.pyinvoke.org/changelog.html"
+documentation = "https://docs.pyinvoke.org"
+repository = "https://github.com/pyinvoke/invoke"
+issues = "https://github.com/pyinvoke/invoke/issues"
+ci = "https://app.circleci.com/pipelines/github/pyinvoke/invoke"
+
+[tool.isort]
+profile = "black"
+line_length = 79
+
+[tool.black]
+line-length = 79
+include = '\.pyi?$'
+exclude = '''
+(
+    /(
+        | \.eggs
+        | \.git
+        | \.pytest_cache
+        | \.venv
+        | _build
+        | buck-out
+        | build
+        | dist
+        | vendor
+    )
+)
+'''
+
+[tool.pylint]
+fail-under = 9.0
+
+[tool.pylint.MASTER]
+ignore-paths = "^src/invoke/vendor/.*$"
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "C0103",
+    "C0114",
+    "C0115",
+    "C0116",
+    "R0903",
+    "W0122",
+    "W0123",
+    "W0715"
+]
+
+[tool.pylint."FORMAT"]
+max-line-length = 79
+
+[tool.pylint."MISCELLANEOUS"]
+notes = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "*"
+addopts = "--log-disable='invoke.vendor.fluidstate'"
+# addopts = "--doctest-modules"
+
+[tool.coverage]
+branch = true
+include = [
+    "src/invoke/*",
+    "tests/*",
+]
+omit = "src/invoke/vendor/*"
+
 [tool.mypy]
 # check_untyped_defs = true
 # follow_imports_for_stubs = true
@@ -16,7 +170,10 @@ disallow_untyped_defs = true
 #     "unused-awaitable",
 #
 exclude = [
-    "integration/", "tests/", "setup.py", "sites/www/conf.py", "build/",
+    "build/",
+    "integration/",
+    "tests/",
+    "sites/www/conf.py",
 ]
 ignore_missing_imports = true
 # implicit_reexport = False

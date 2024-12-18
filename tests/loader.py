@@ -1,16 +1,16 @@
 import os
 import sys
 from importlib.util import spec_from_file_location
-from types import ModuleType
 from pathlib import Path
+from types import ModuleType
 
+from _util import support
 from pytest import raises
 
 from invoke import Config
-from invoke.loader import Loader, FilesystemLoader as FSLoader
 from invoke.exceptions import CollectionNotFound
-
-from _util import support
+from invoke.loader import FilesystemLoader as FSLoader
+from invoke.loader import Loader
 
 
 class _BasicLoader(Loader):

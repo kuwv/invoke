@@ -1,12 +1,11 @@
 import operator
 from functools import reduce
 
+from _util import load, support_path
 from pytest import raises
 
 from invoke.collection import Collection
-from invoke.tasks import task, Task
-
-from _util import load, support_path
+from invoke.tasks import Task, task
 
 
 @task

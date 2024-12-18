@@ -1,4 +1,4 @@
-from pytest import skip, raises
+from pytest import raises, skip
 
 from invoke.parser import Argument
 

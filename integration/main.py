@@ -1,15 +1,14 @@
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
+from _util import only_utf8
 from pytest_relaxed import trap
 
 from invoke import run
 from invoke._version import __version__
 from invoke.terminals import WINDOWS
-
-from _util import only_utf8
 
 
 def _output_eq(cmd, expected):

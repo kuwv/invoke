@@ -1,7 +1,7 @@
 import os
 import sys
-from io import BytesIO
 from functools import wraps
+from io import BytesIO
 
 try:
     import termios
@@ -9,14 +9,13 @@ except ImportError:
     # Not available on Windows
     termios = None
 from contextlib import contextmanager
+from unittest.mock import Mock, patch
 
-from unittest.mock import patch, Mock
 from pytest import skip
 from pytest_relaxed import trap
 
 from invoke import Program, Runner
 from invoke.terminals import WINDOWS
-
 
 support = os.path.join(os.path.dirname(__file__), "_support")
 ROOT = os.path.abspath(os.path.sep)

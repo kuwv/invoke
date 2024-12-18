@@ -1,6 +1,6 @@
 from pytest import raises
 
-from invoke.parser import Parser, Context, Argument, ParseError
+from invoke.parser import Argument, Context, ParseError, Parser
 
 
 class Parser_:

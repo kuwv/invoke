@@ -10,7 +10,6 @@ Accepts a single argv argument, which is the number of cycles to run.
 import sys
 import time
 
-
 num_cycles = int(sys.argv[1])
 
 for i in range(num_cycles):

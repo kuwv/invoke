@@ -2,9 +2,9 @@ import copy
 
 from pytest import raises
 
+from invoke.collection import Collection
 from invoke.parser import Argument, Context
 from invoke.tasks import task
-from invoke.collection import Collection
 
 
 class Context_:

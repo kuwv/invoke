@@ -1,13 +1,13 @@
-import pickle
 import os
+import pickle
 from os.path import join
+from unittest.mock import Mock, call, patch
 
-from unittest.mock import patch, call, Mock
 import pytest
+from _util import skip_if_windows, support
 from pytest_relaxed import raises
 
 from invoke import config as config_mod  # for accessing mocks
-from invoke.runners import Local
 from invoke.config import Config
 from invoke.exceptions import (
     AmbiguousEnvVar,
@@ -15,9 +15,7 @@ from invoke.exceptions import (
     UnknownFileType,
     UnpicklableConfigMember,
 )
-
-from _util import skip_if_windows, support
-
+from invoke.runners import Local
 
 pytestmark = pytest.mark.usefixtures("integration")
 
@@ -644,7 +642,9 @@ Valid real attributes: ['clear', 'clone', 'env_prefix', 'file_prefix', 'from_dat
             c._load_yml = Mock(side_effect=IOError(2, "aw nuts"))
             c.set_runtime_path("is-a.yml")  # Triggers use of _load_yml
             c.load_runtime()
-            mock_debug.assert_any_call("Didn't see any is-a.yml, skipping.")
+            mock_debug.assert_any_call(
+                "Didn't see any %r, skipping.", "is-a.yml"
+            )
 
         @raises(IOError)
         def non_missing_file_IOErrors_are_raised(self):
