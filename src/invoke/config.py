@@ -414,9 +414,9 @@ class Config(DataProxy):
     .. versionadded:: 1.0
     """
 
-    prefix = "invoke"
-    file_prefix = None
-    env_prefix = None
+    prefix: str = "invoke"
+    file_prefix: Optional[str] = None
+    env_prefix: Optional[str] = None
 
     @staticmethod
     def global_defaults() -> Dict[str, Any]:
@@ -510,7 +510,7 @@ class Config(DataProxy):
         project_location: Optional[PathLike] = None,
         runtime_path: Optional[PathLike] = None,
         lazy: bool = False,
-    ):
+    ) -> None:
         """
         Creates a new config object.
 

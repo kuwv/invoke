@@ -121,7 +121,7 @@ class FilesystemLoader(Loader):
 
     def find(self, name: str) -> Optional[ModuleSpec]:
         debug("FilesystemLoader find starting at %r", self.start)
-        spec = None
+        spec: Optional[ModuleSpec] = None
         module = f"{name}.py"
         paths = self.start.split(os.sep)
         try:
