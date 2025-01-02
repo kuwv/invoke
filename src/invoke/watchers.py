@@ -1,8 +1,11 @@
 import re
 import threading
-from typing import Generator, Iterable
+from typing import TYPE_CHECKING
 
 from .exceptions import ResponseNotAccepted
+
+if TYPE_CHECKING:
+    from collecions.abc import Iterable, Iterator
 
 
 class StreamWatcher(threading.local):
@@ -35,7 +38,7 @@ class StreamWatcher(threading.local):
     .. versionadded:: 1.0
     """
 
-    def submit(self, stream: str) -> Iterable[str]:
+    def submit(self, stream: str) -> "Iterable[str]":
         """
         Act on ``stream`` data, potentially returning responses.
 
@@ -78,7 +81,7 @@ class Responder(StreamWatcher):
 
     def pattern_matches(
         self, stream: str, pattern: str, index_attr: str
-    ) -> Iterable[str]:
+    ) -> "Iterable[str]":
         """
         Generic "search for pattern in stream, using index" behavior.
 
@@ -104,7 +107,7 @@ class Responder(StreamWatcher):
             setattr(self, index_attr, index + len(new))
         return matches
 
-    def submit(self, stream: str) -> Generator[str, None, None]:
+    def submit(self, stream: str) -> "Iterator[str]":
         # Iterate over findall() response in case >1 match occurred.
         for _ in self.pattern_matches(stream, self.pattern, "index"):
             yield self.response
@@ -127,7 +130,7 @@ class FailingResponder(Responder):
         self.failure_index = 0
         self.tried = False
 
-    def submit(self, stream: str) -> Generator[str, None, None]:
+    def submit(self, stream: str) -> "Iterator[str]":
         # Behave like regular Responder initially
         response = super().submit(stream)
         # Also check stream for our failure sentinel

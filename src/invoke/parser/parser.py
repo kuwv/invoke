@@ -1,5 +1,5 @@
 import copy
-from typing import TYPE_CHECKING, Any, Iterable, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from lexicon import Lexicon
 
@@ -12,6 +12,7 @@ from ..exceptions import ParseError
 from ..util import debug
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from .context import ParserContext
 
 
@@ -23,9 +24,9 @@ def is_long_flag(value: str) -> bool:
     return value.startswith("--")
 
 
-class ParseResult(List["ParserContext"]):
+class ParseResult(list["ParserContext"]):
     """
-    List-like object with some extra parse-related attributes.
+    list-like object with some extra parse-related attributes.
 
     Specifically, a ``.remainder`` attribute, which is the string found after a
     ``--`` in any parsed argv list; and an ``.unparsed`` attribute, a list of
@@ -37,7 +38,7 @@ class ParseResult(List["ParserContext"]):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.remainder = ""
-        self.unparsed: List[str] = []
+        self.unparsed: list[str] = []
 
 
 class Parser:
@@ -63,8 +64,8 @@ class Parser:
 
     def __init__(
         self,
-        contexts: Iterable["ParserContext"] = (),
-        initial: Optional["ParserContext"] = None,
+        contexts: "Iterable[ParserContext]" = (),
+        initial: "Optional[ParserContext]" = None,
         ignore_unknown: bool = False,
     ) -> None:
         self.initial = initial
@@ -83,7 +84,7 @@ class Parser:
                     raise ValueError(exists.format(alias))
                 self.contexts.alias(alias, to=context.name)
 
-    def parse_argv(self, argv: List[str]) -> ParseResult:
+    def parse_argv(self, argv: list[str]) -> ParseResult:
         """
         Parse an argv-style token list ``argv``.
 
@@ -100,7 +101,7 @@ class Parser:
 
             Parser(...).parse_argv(['invoke', '--core-opt', ...])
 
-        :param argv: List of argument string tokens.
+        :param argv: list of argument string tokens.
         :returns:
             A `.ParseResult` (a ``list`` subclass containing some number of
             `.ParserContext` objects).

@@ -11,10 +11,13 @@ import os
 import select
 import sys
 from contextlib import contextmanager
-from typing import IO, Generator, Optional, Tuple
+from typing import IO, TYPE_CHECKING, Optional
 
 # TODO: move in here? They're currently platform-agnostic...
 from .util import has_fileno, isatty
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 WINDOWS = sys.platform == "win32"
 """
@@ -40,7 +43,7 @@ else:
 
 if sys.platform == "win32":
 
-    def _pty_size() -> Tuple[Optional[int], Optional[int]]:
+    def _pty_size() -> tuple[Optional[int], Optional[int]]:
         class CONSOLE_SCREEN_BUFFER_INFO(Structure):
             _fields_ = [
                 ("dwSize", _COORD),
@@ -70,7 +73,7 @@ if sys.platform == "win32":
 
 else:
 
-    def _pty_size() -> Tuple[Optional[int], Optional[int]]:
+    def _pty_size() -> tuple[Optional[int], Optional[int]]:
         """
         Suitable for most POSIX platforms.
 
@@ -104,7 +107,7 @@ else:
         return size
 
 
-def pty_size() -> Tuple[int, int]:
+def pty_size() -> tuple[int, int]:
     """
     Determine current local pseudoterminal dimensions.
 
@@ -166,7 +169,7 @@ def cbreak_already_set(stream: IO) -> bool:
 
 
 @contextmanager
-def character_buffered(stream: IO) -> Generator[None, None, None]:
+def character_buffered(stream: IO) -> "Iterator":
     """
     Force local terminal ``stream`` be character, not line, buffered.
 

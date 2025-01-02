@@ -4,7 +4,7 @@ from importlib.machinery import ModuleSpec
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 from . import Config
 from .exceptions import CollectionNotFound
@@ -46,7 +46,7 @@ class Loader:
         """
         raise NotImplementedError
 
-    def load(self, name: Optional[str] = None) -> Tuple[ModuleType, str]:
+    def load(self, name: Optional[str] = None) -> tuple[ModuleType, str]:
         """
         Load and return collection module identified by ``name``.
 

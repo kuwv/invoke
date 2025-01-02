@@ -6,7 +6,10 @@ from collections import namedtuple
 from contextlib import contextmanager
 from threading import Thread
 from types import TracebackType
-from typing import IO, Any, Generator, List, Optional, Tuple, Type, Union
+from typing import IO, TYPE_CHECKING, Any, Optional, Type, Union
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 # NOTE: This is the canonical location for commonly-used vendored modules,
 # which is the only spot that performs this try/except to allow repackaged
@@ -35,7 +38,7 @@ log = logging.getLogger("invoke")
 debug = log.debug
 
 
-def task_name_sort_key(name: str) -> Tuple[List[str], str]:
+def task_name_sort_key(name: str) -> tuple[list[str], str]:
     """
     Return key tuple for use sorting dotted task names, via e.g. `sorted`.
 
@@ -54,7 +57,7 @@ def task_name_sort_key(name: str) -> Tuple[List[str], str]:
 
 # TODO: Make part of public API sometime
 @contextmanager
-def cd(where: str) -> Generator[None, None, None]:
+def cd(where: str) -> "Iterator":
     cwd = os.getcwd()
     os.chdir(where)
     try:
@@ -172,8 +175,8 @@ class ExceptionHandlingThread(Thread):
         # TODO: legacy cruft that needs to be removed
         self.exc_info: Optional[
             Union[
-                Tuple[Type[BaseException], BaseException, TracebackType],
-                Tuple[None, None, None],
+                tuple[Type[BaseException], BaseException, TracebackType],
+                tuple[None, None, None],
             ]
         ] = None
 

@@ -1,6 +1,6 @@
 import copy
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from lexicon import Lexicon
 
@@ -8,6 +8,9 @@ from .config import copy_dict, merge_dicts
 from .parser import Context as ParserContext
 from .tasks import Task
 from .util import helpline
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class Collection:
@@ -96,7 +99,7 @@ class Collection:
         self.collections = Lexicon()
         self.default: Optional[str] = None
         self.name = None
-        self._configuration: Dict[str, Any] = {}
+        self._configuration: dict = {}
         # Specific kwargs if applicable
         self.loaded_from = kwargs.pop("loaded_from", None)
         self.auto_dash_names = kwargs.pop("auto_dash_names", None)
@@ -115,7 +118,7 @@ class Collection:
             self._add_object(obj, name)
 
     def _add_object(self, obj: Any, name: Optional[str] = None) -> None:
-        method: Callable
+        method: "Callable"
         if isinstance(obj, Task):
             method = self.add_task
         elif isinstance(obj, (Collection, ModuleType)):
@@ -148,7 +151,7 @@ class Collection:
         cls,
         module: ModuleType,
         name: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        config: Optional[dict] = None,
         loaded_from: Optional[str] = None,
         auto_dash_names: Optional[bool] = None,
     ) -> "Collection":
@@ -241,7 +244,7 @@ class Collection:
         self,
         task: "Task",
         name: Optional[str] = None,
-        aliases: Optional[Tuple[str, ...]] = None,
+        aliases: Optional[tuple[str, ...]] = None,
         default: Optional[bool] = None,
     ) -> None:
         """
@@ -335,7 +338,7 @@ class Collection:
             msg = "'{}' cannot be the default because '{}' already is!"
             raise ValueError(msg.format(name, self.default))
 
-    def _split_path(self, path: str) -> Tuple[str, str]:
+    def _split_path(self, path: str) -> tuple[str, str]:
         """
         Obtain first collection + remainder, of a task path.
 
@@ -379,14 +382,14 @@ class Collection:
         return self.task_with_config(name)[0]
 
     def _task_with_merged_config(
-        self, coll: str, rest: str, ours: Dict[str, Any]
-    ) -> Tuple[str, Dict[str, Any]]:
+        self, coll: str, rest: str, ours: dict
+    ) -> tuple[str, dict]:
         task, config = self.collections[coll].task_with_config(rest)
         return task, dict(config, **ours)
 
     def task_with_config(
         self, name: Optional[str]
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> tuple[str, dict]:
         """
         Return task named ``name`` plus its configuration dict.
 
@@ -429,7 +432,7 @@ class Collection:
 
     def to_contexts(
         self, ignore_unknown_help: Optional[bool] = None
-    ) -> List[ParserContext]:
+    ) -> list[ParserContext]:
         """
         Returns all contained tasks and subtasks as a list of parser contexts.
 
@@ -517,7 +520,7 @@ class Collection:
         return new
 
     @property
-    def task_names(self) -> Dict[str, List[str]]:
+    def task_names(self) -> dict[str, list[str]]:
         """
         Return all task identifiers for this collection as a one-level dict.
 
@@ -548,7 +551,7 @@ class Collection:
                 ret[self.subtask_name(coll_name, task_name)] = aliases
         return ret
 
-    def configuration(self, taskpath: Optional[str] = None) -> Dict[str, Any]:
+    def configuration(self, taskpath: Optional[str] = None) -> dict:
         """
         Obtain merged configuration values from collection & children.
 
@@ -566,7 +569,7 @@ class Collection:
             return copy_dict(self._configuration)
         return self.task_with_config(taskpath)[1]
 
-    def configure(self, options: Dict[str, Any]) -> None:
+    def configure(self, options: dict) -> None:
         """
         (Recursively) merge ``options`` into the current `.configuration`.
 
@@ -585,7 +588,7 @@ class Collection:
         """
         merge_dicts(self._configuration, options)
 
-    def serialized(self) -> Dict[str, Any]:
+    def serialized(self) -> dict:
         """
         Return an appropriate-for-serialization version of this object.
 

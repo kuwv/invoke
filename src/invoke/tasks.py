@@ -10,14 +10,8 @@ from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
     Generic,
-    Iterable,
-    List,
     Optional,
-    Set,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -28,11 +22,12 @@ from .context import Context
 from .parser import Argument, translate_underscores
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
     from inspect import Signature
 
     from .config import Config
 
-T = TypeVar("T", bound=Callable)
+T = TypeVar("T", bound="Callable")
 
 
 class Task(Generic[T]):
@@ -60,19 +55,19 @@ class Task(Generic[T]):
     # except a debug shell whose frame is exactly inside this class.
     def __init__(
         self,
-        body: Callable,
+        body: "Callable",
         name: Optional[str] = None,
-        aliases: Iterable[str] = (),
-        positional: Optional[Iterable[str]] = None,
-        optional: Iterable[str] = (),
+        aliases: "Iterable[str]" = (),
+        positional: "Optional[Iterable[str]]" = None,
+        optional: "Iterable[str]" = (),
         default: bool = False,
         auto_shortflags: bool = True,
-        help: Optional[Dict[str, Any]] = None,
-        pre: Optional[Union[List[str], str]] = None,
-        post: Optional[Union[List[str], str]] = None,
+        help: Optional[dict] = None,
+        pre: Optional[Union[list[str], str]] = None,
+        post: Optional[Union[list[str], str]] = None,
         autoprint: bool = False,
-        iterable: Optional[Iterable[str]] = None,
-        incrementable: Optional[Iterable[str]] = None,
+        iterable: "Optional[Iterable[str]]" = None,
+        incrementable: "Optional[Iterable[str]]" = None,
     ) -> None:
         # Real callable
         self.body = body
@@ -144,7 +139,7 @@ class Task(Generic[T]):
     def called(self) -> bool:
         return self.times_called > 0
 
-    def argspec(self, body: Callable) -> "Signature":
+    def argspec(self, body: "Callable") -> "Signature":
         """
         Returns a modified `inspect.Signature` based on that of ``body``.
 
@@ -176,8 +171,8 @@ class Task(Generic[T]):
         return sig.replace(parameters=params[1:])
 
     def fill_implicit_positionals(
-        self, positional: Optional[Iterable[str]]
-    ) -> Iterable[str]:
+        self, positional: "Optional[Iterable[str]]"
+    ) -> "Iterable[str]":
         # If positionals is None, everything lacking a default
         # value will be automatically considered positional.
         if positional is None:
@@ -188,10 +183,8 @@ class Task(Generic[T]):
             ]
         return positional
 
-    def arg_opts(
-        self, name: str, default: str, taken_names: Set[str]
-    ) -> Dict[str, Any]:
-        opts: Dict[str, Any] = {}
+    def arg_opts(self, name: str, default: str, taken_names: set[str]) -> dict:
+        opts: dict = {}
         # Whether it's positional or not
         opts["positional"] = name in self.positional
         # Whether it is a value-optional flag
@@ -239,7 +232,7 @@ class Task(Generic[T]):
 
     def get_arguments(
         self, ignore_unknown_help: Optional[bool] = None
-    ) -> List[Argument]:
+    ) -> list[Argument]:
         """
         Return a list of Argument objects representing this task's signature.
 
@@ -322,11 +315,11 @@ def task(*args: Any, **kwargs: Any) -> "Task[T]":
       given.)
     * ``auto_shortflags``: Whether or not to automatically create short
       flags from task options; defaults to True.
-    * ``help``: Dict mapping argument names to their help strings. Will be
+    * ``help``: dict mapping argument names to their help strings. Will be
       displayed in ``--help`` output. For arguments containing underscores
       (which are transformed into dashes on the CLI by default), either the
       dashed or underscored version may be supplied here.
-    * ``pre``, ``post``: Lists of task objects to execute prior to, or after,
+    * ``pre``, ``post``: lists of task objects to execute prior to, or after,
       the wrapped task whenever it is executed.
     * ``autoprint``: Boolean determining whether to automatically print this
       task's return value to standard output when invoked directly via the CLI.
@@ -353,7 +346,7 @@ def task(*args: Any, **kwargs: Any) -> "Task[T]":
             )
         kwargs["pre"] = args
 
-    def inner(body: Callable) -> Task[T]:
+    def inner(body: "Callable") -> Task[T]:
         _task = klass(body, **kwargs)
         return _task
 
@@ -376,8 +369,8 @@ class Call:
         self,
         task: "Task",
         called_as: Optional[str] = None,
-        args: Optional[Tuple[str, ...]] = None,
-        kwargs: Optional[Dict[str, Any]] = None,
+        args: Optional[tuple[str, ...]] = None,
+        kwargs: Optional[dict] = None,
     ) -> None:
         """
         Create a new `.Call` object.
@@ -437,7 +430,7 @@ class Call:
         """
         return Context(config=config)
 
-    def clone_data(self) -> Dict[str, Any]:
+    def clone_data(self) -> dict:
         """
         Return keyword args suitable for cloning this call into another.
 
@@ -453,7 +446,7 @@ class Call:
     def clone(
         self,
         into: Optional[Type["Call"]] = None,
-        with_: Optional[Dict[str, Any]] = None,
+        with_: Optional[dict] = None,
     ) -> "Call":
         """
         Return a standalone copy of this Call.

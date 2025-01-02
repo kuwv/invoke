@@ -1,9 +1,12 @@
 import itertools
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from lexicon import Lexicon
 
 from .argument import Argument
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def translate_underscores(name: str) -> str:
@@ -25,14 +28,14 @@ def sort_candidate(arg: Argument) -> str:
     return str(sorted(shorts if shorts else longs)[0])
 
 
-def flag_key(arg: Argument) -> List[Union[int, str]]:
+def flag_key(arg: Argument) -> list[Union[int, str]]:
     """
     Obtain useful key list-of-ints for sorting CLI flags.
 
     .. versionadded:: 1.0
     """
     # Setup
-    ret: List[Union[int, str]] = []
+    ret: list[Union[int, str]] = []
     x = sort_candidate(arg)
     # Long-style flags win over short-style ones, so the first item of
     # comparison is simply whether the flag is a single character long (with
@@ -68,8 +71,8 @@ class ParserContext:
     def __init__(
         self,
         name: Optional[str] = None,
-        aliases: Iterable[str] = (),
-        args: Iterable[Argument] = (),
+        aliases: "Iterable[str]" = (),
+        args: "Iterable[Argument]" = (),
     ) -> None:
         """
         Create a new ``ParserContext`` named ``name``, with ``aliases``.
@@ -86,9 +89,9 @@ class ParserContext:
         ``for arg in args: self.add_arg(arg)`` after initialization.
         """
         self.args = Lexicon()
-        self.positional_args: List[Argument] = []
+        self.positional_args: list[Argument] = []
         self.flags = Lexicon()
-        self.inverse_flags: Dict[str, Any] = {}  # No need for Lexicon here
+        self.inverse_flags: dict = {}  # No need for Lexicon here
         self.name = name
         self.aliases = aliases
         for arg in args:
@@ -155,11 +158,11 @@ class ParserContext:
             self.inverse_flags[inverse_name] = to_flag(main)
 
     @property
-    def missing_positional_args(self) -> List[Argument]:
+    def missing_positional_args(self) -> list[Argument]:
         return [x for x in self.positional_args if x.value is None]
 
     @property
-    def as_kwargs(self) -> Dict[str, Any]:
+    def as_kwargs(self) -> dict:
         """
         This context's arguments' values keyed by their ``.name`` attribute.
 
@@ -173,11 +176,11 @@ class ParserContext:
             ret[arg.name] = arg.value
         return ret
 
-    def names_for(self, flag: str) -> List[str]:
-        # TODO: should probably be a method on Lexicon/AliasDict
+    def names_for(self, flag: str) -> list[str]:
+        # TODO: should probably be a method on Lexicon/Aliasdict
         return list(set([flag] + self.flags.aliases_of(flag)))
 
-    def help_for(self, flag: str) -> Tuple[str, str]:
+    def help_for(self, flag: str) -> tuple[str, str]:
         """
         Return 2-tuple of ``(flag-spec, help-string)`` for given ``flag``.
 
@@ -218,7 +221,7 @@ class ParserContext:
         helpstr = arg.help or ""
         return namestr, helpstr
 
-    def help_tuples(self) -> List[Tuple[str, Optional[str]]]:
+    def help_tuples(self) -> list[tuple[str, Optional[str]]]:
         """
         Return sorted iterable of help tuples for all member Arguments.
 
@@ -252,7 +255,7 @@ class ParserContext:
             )
         )
 
-    def flag_names(self) -> Tuple[str, ...]:
+    def flag_names(self) -> tuple[str, ...]:
         """
         Similar to `help_tuples` but returns flag names only, no helpstrs.
 

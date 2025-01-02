@@ -6,7 +6,7 @@ import glob
 import os
 import re
 import shlex
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from ..exceptions import Exit, ParseError
 from ..util import debug, task_name_sort_key
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 def complete(
-    names: List[str],
+    names: list[str],
     core: "ParseResult",
     initial_context: "ParserContext",
     collection: "Collection",
@@ -37,7 +37,7 @@ def complete(
         # Use last seen context in case of failure (required for
         # otherwise-invalid partial invocations being completed).
 
-        contexts: List[ParserContext]
+        contexts: list[ParserContext]
         try:
             debug("Seeking context name in tokens: %r", tokens)
             contexts = parser.parse_argv(tokens)
@@ -104,7 +104,7 @@ def print_task_names(collection: "Collection") -> None:
             print(alias)
 
 
-def print_completion_script(shell: str, names: List[str]) -> None:
+def print_completion_script(shell: str, names: list[str]) -> None:
     # Grab all .completion files in invoke/completion/. (These used to have no
     # suffix, but surprise, that's super fragile.
     completions = {

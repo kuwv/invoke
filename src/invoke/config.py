@@ -6,7 +6,7 @@ from importlib.util import spec_from_loader
 from os import PathLike
 from os.path import expanduser, join, splitext
 from types import ModuleType
-from typing import Any, Dict, Iterator, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Optional, Type, Union
 
 try:
     # pylint: disable-next=ungrouped-imports
@@ -24,8 +24,11 @@ from .runners import Local
 from .terminals import WINDOWS
 from .util import debug
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
-def load_source(_: str, path: str) -> Dict[str, Any]:
+
+def load_source(_: str, path: str) -> dict:
     # NOTE: "_" stub was "name" but is unused
     if not os.path.exists(path):
         return {}
@@ -70,9 +73,9 @@ class DataProxy:
     @classmethod
     def from_data(
         cls,
-        data: Dict[str, Any],
+        data: dict,
         root: Optional["DataProxy"] = None,
-        keypath: Tuple[str, ...] = tuple(),
+        keypath: tuple[str, ...] = tuple(),
     ) -> "DataProxy":
         """
         Alternate constructor for 'baby' DataProxies used as sub-dict values.
@@ -131,10 +134,10 @@ class DataProxy:
         else:
             super().__setattr__(key, value)
 
-    def __iter__(self) -> Iterator[Dict[str, Any]]:
+    def __iter__(self) -> "Iterator[dict]":
         # For some reason Python is ignoring our __hasattr__ when determining
         # whether we support __iter__. BOO
-        return iter(self._config)
+        yield from iter(self._config)
 
     def __eq__(self, other: object) -> bool:
         # NOTE: Can't proxy __eq__ because the RHS will always be an obj of the
@@ -419,7 +422,7 @@ class Config(DataProxy):
     env_prefix: Optional[str] = None
 
     @staticmethod
-    def global_defaults() -> Dict[str, Any]:
+    def global_defaults() -> dict:
         """
         Return the core default settings for Invoke.
 
@@ -503,8 +506,8 @@ class Config(DataProxy):
 
     def __init__(
         self,
-        overrides: Optional[Dict[str, Any]] = None,
-        defaults: Optional[Dict[str, Any]] = None,
+        overrides: Optional[dict] = None,
+        defaults: Optional[dict] = None,
         system_prefix: Optional[str] = None,
         user_prefix: Optional[str] = None,
         project_location: Optional[PathLike] = None,
@@ -651,7 +654,7 @@ class Config(DataProxy):
         self.load_system(merge=False)
         self.load_user(merge=False)
 
-    def load_defaults(self, data: Dict[str, Any], merge: bool = True) -> None:
+    def load_defaults(self, data: dict, merge: bool = True) -> None:
         """
         Set or replace the 'defaults' configuration level, from ``data``.
 
@@ -669,7 +672,7 @@ class Config(DataProxy):
         if merge:
             self.merge()
 
-    def load_overrides(self, data: Dict[str, Any], merge: bool = True) -> None:
+    def load_overrides(self, data: dict, merge: bool = True) -> None:
         """
         Set or replace the 'overrides' configuration level, from ``data``.
 
@@ -800,9 +803,7 @@ class Config(DataProxy):
         debug("Loaded shell environment, triggering final merge")
         self.merge()
 
-    def load_collection(
-        self, data: Dict[str, Any], merge: bool = True
-    ) -> None:
+    def load_collection(self, data: dict, merge: bool = True) -> None:
         """
         Update collection-driven config data.
 
@@ -914,7 +915,7 @@ class Config(DataProxy):
         with open(path, encoding="utf-8") as fd:
             return json.load(fd)
 
-    def _load_py(self, path: str) -> Dict[str, Any]:
+    def _load_py(self, path: str) -> dict:
         data = {}
         for key, value in (load_source("mod", path)).items():
             # Strip special members, as these are always going to be builtins
@@ -1056,7 +1057,7 @@ class Config(DataProxy):
             # values' types, but at that point it's on them...
             if not isinstance(my_data, dict):
                 new._set(name, copy.copy(my_data))
-            # Dict data gets merged (which also involves a copy.copy
+            # dict data gets merged (which also involves a copy.copy
             # eventually)
             else:
                 merge_dicts(getattr(new, name), my_data)
@@ -1070,7 +1071,7 @@ class Config(DataProxy):
 
     def _clone_init_kwargs(
         self, into: Optional[Type["Config"]] = None
-    ) -> Dict[str, Any]:
+    ) -> dict:
         """
         Supply kwargs suitable for initializing a new clone of this object.
 
@@ -1097,7 +1098,7 @@ class Config(DataProxy):
             "lazy": True,
         }
 
-    def _modify(self, keypath: Tuple[str, ...], key: str, value: str) -> None:
+    def _modify(self, keypath: tuple[str, ...], key: str, value: str) -> None:
         """
         Update our user-modifications config level with new data.
 
@@ -1127,7 +1128,7 @@ class Config(DataProxy):
         data[key] = value
         self.merge()
 
-    def _remove(self, keypath: Tuple[str, ...], key: str) -> None:
+    def _remove(self, keypath: tuple[str, ...], key: str) -> None:
         """
         Like `._modify`, but for removal.
         """
@@ -1163,9 +1164,7 @@ class AmbiguousMergeError(ValueError):
     pass
 
 
-def merge_dicts(
-    base: Dict[str, Any], updates: Dict[str, Any]
-) -> Dict[str, Any]:
+def merge_dicts(base: dict, updates: dict) -> dict:
     """
     Recursively merge dict ``updates`` into dict ``base`` (mutating ``base``.)
 
@@ -1189,7 +1188,7 @@ def merge_dicts(
     """
     # TODO: for chrissakes just make it return instead of mutating?
     for key, value in (updates or {}).items():
-        # Dict values whose keys also exist in 'base' -> recurse
+        # dict values whose keys also exist in 'base' -> recurse
         # (But only if both types are dicts.)
         if key in base:
             if isinstance(value, dict):
@@ -1208,7 +1207,7 @@ def merge_dicts(
                     base[key] = copy.copy(value)
         # New values get set anew
         else:
-            # Dict values get reconstructed to avoid being references to the
+            # dict values get reconstructed to avoid being references to the
             # updates dict, which can lead to nasty state-bleed bugs otherwise
             if isinstance(value, dict):
                 base[key] = copy_dict(value)
@@ -1234,7 +1233,7 @@ def _format_mismatch(x: object) -> str:
     return f"{type(x)} ({x!r})"
 
 
-def copy_dict(source: Dict[str, Any]) -> Dict[str, Any]:
+def copy_dict(source: dict) -> dict:
     """
     Return a fresh copy of ``source`` with as little shared state as possible.
 
@@ -1246,7 +1245,7 @@ def copy_dict(source: Dict[str, Any]) -> Dict[str, Any]:
     return merge_dicts({}, source)
 
 
-def excise(dict_: Dict[str, Any], keypath: Tuple[str, ...]) -> None:
+def excise(dict_: dict, keypath: tuple[str, ...]) -> None:
     """
     Remove key pointed at by ``keypath`` from nested dict ``dict_``, if exists.
 
@@ -1265,7 +1264,7 @@ def excise(dict_: Dict[str, Any], keypath: Tuple[str, ...]) -> None:
         del data[leaf_key]
 
 
-def obliterate(base: Dict[str, Any], deletions: Dict[str, Any]) -> None:
+def obliterate(base: dict, deletions: dict) -> None:
     """
     Remove all (nested) keys mentioned in ``deletions``, from ``base``.
 

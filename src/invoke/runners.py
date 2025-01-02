@@ -12,12 +12,7 @@ from typing import (
     IO,
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
-    Generator,
-    List,
     Optional,
-    Tuple,
     Type,
     overload,
 )
@@ -55,6 +50,7 @@ from .terminals import (
 from .util import ExceptionHandlingThread, has_fileno, isatty
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
     from .context import Context
     from .watchers import StreamWatcher
 
@@ -71,14 +67,14 @@ class Runner:
     """
 
     encoding: str
-    env: Dict[str, Any]
-    opts: Dict[str, Any]
-    result_kwargs: Dict[str, Any]
+    env: dict
+    opts: dict
+    result_kwargs: dict
     using_pty: bool
-    threads: Dict[Callable, ExceptionHandlingThread]
-    stdout: List[str]
-    stderr: List[str]
-    streams: Dict[str, Any]
+    threads: dict["Callable", ExceptionHandlingThread]
+    stdout: list[str]
+    stderr: list[str]
+    streams: dict
     read_chunk_size: int = 1000
     input_sleep: float = 0.01
 
@@ -122,7 +118,7 @@ class Runner:
         self.warned_about_pty_fallback = False
         #: A list of `.StreamWatcher` instances for use by `respond`. Is filled
         #: in at runtime by `run`.
-        self.watchers: List["StreamWatcher"] = []
+        self.watchers: list["StreamWatcher"] = []
         # Optional timeout timer placeholder
         self._timer: Optional[threading.Timer] = None
         # Async flags (initialized for 'finally' referencing in case something
@@ -598,7 +594,7 @@ class Runner:
         self.opts = opts
         self.streams = {"out": out_stream, "err": err_stream, "in": in_stream}
 
-    def _collate_result(self, watcher_errors: List[WatcherError]) -> "Result":
+    def _collate_result(self, watcher_errors: list[WatcherError]) -> "Result":
         # At this point, we had enough success that we want to be returning or
         # raising detailed info about our execution; so we generate a Result.
         stdout = "".join(self.stdout)
@@ -626,7 +622,7 @@ class Runner:
         )
         return result
 
-    def _thread_join_timeout(self, target: Callable) -> Optional[int]:
+    def _thread_join_timeout(self, target: "Callable") -> Optional[int]:
         # Add a timeout to out/err thread joins when it looks like they're not
         # dead but their counterpart is dead; this indicates issue #351 (fixed
         # by #432) where the subproc may hang because its stdout (or stderr) is
@@ -644,17 +640,19 @@ class Runner:
 
     def create_io_threads(
         self,
-    ) -> Tuple[Dict[Callable, ExceptionHandlingThread], List[str], List[str]]:
+    ) -> tuple[
+        dict["Callable", ExceptionHandlingThread], list[str], list[str]
+    ]:
         """
         Create and return a dictionary of IO thread worker objects.
 
         Caller is expected to handle persisting and/or starting the wrapped
         threads.
         """
-        stdout: List[str] = []
-        stderr: List[str] = []
+        stdout: list[str] = []
+        stderr: list[str] = []
         # Set up IO thread parameters (format - body_func: {kwargs})
-        thread_args: Dict[Callable, Any] = {
+        thread_args: dict["Callable", Any] = {
             self.handle_stdout: {
                 "buffer_": stdout,
                 "hide": "stdout" in self.opts["hide"],
@@ -696,7 +694,7 @@ class Runner:
         """
         return Result(**kwargs)
 
-    def read_proc_output(self, reader: Callable) -> Generator[str, None, None]:
+    def read_proc_output(self, reader: "Callable") -> "Iterator[str]":
         """
         Iteratively read & decode bytes from a subprocess' out/err stream.
 
@@ -751,10 +749,10 @@ class Runner:
 
     def _handle_output(
         self,
-        buffer_: List[str],
+        buffer_: list[str],
         hide: bool,
         output: IO,
-        reader: Callable,
+        reader: "Callable",
     ) -> None:
         # TODO: store un-decoded/raw bytes somewhere as well...
         for data in self.read_proc_output(reader):
@@ -774,7 +772,7 @@ class Runner:
             self.respond(buffer_)
 
     def handle_stdout(
-        self, buffer_: List[str], hide: bool, output: IO
+        self, buffer_: list[str], hide: bool, output: IO
     ) -> None:
         """
         Read process' stdout, storing into a buffer & printing/parsing.
@@ -797,7 +795,7 @@ class Runner:
         )
 
     def handle_stderr(
-        self, buffer_: List[str], hide: bool, output: IO
+        self, buffer_: list[str], hide: bool, output: IO
     ) -> None:
         """
         Read process' stderr, storing into a buffer & printing/parsing.
@@ -932,7 +930,7 @@ class Runner:
         """
         return (not self.using_pty) and isatty(input_)
 
-    def respond(self, buffer_: List[str]) -> None:
+    def respond(self, buffer_: list[str]) -> None:
         """
         Write to the program's stdin in response to patterns in ``buffer_``.
 
@@ -960,12 +958,12 @@ class Runner:
                 self.write_proc_stdin(response)
 
     def generate_env(
-        self, env: Dict[str, Any], replace_env: bool
-    ) -> Dict[str, Any]:
+        self, env: dict, replace_env: bool
+    ) -> dict:
         """
         Return a suitable environment dict based on user input & behavior.
 
-        :param dict env: Dict supplying overrides or full env, depending.
+        :param dict env: dict supplying overrides or full env, depending.
         :param bool replace_env:
             Whether ``env`` updates, or is used in place of, the value of
             `os.environ`.
@@ -1065,7 +1063,7 @@ class Runner:
         """
         raise NotImplementedError
 
-    def start(self, command: str, shell: str, env: Dict[str, Any]) -> None:
+    def start(self, command: str, shell: str, env: dict) -> None:
         """
         Initiate execution of ``command`` (via ``shell``, with ``env``).
 
@@ -1334,7 +1332,7 @@ class Local(Runner):
                 "Unable to close missing subprocess or stdin!"
             )
 
-    def start(self, command: str, shell: str, env: Dict[str, Any]) -> None:
+    def start(self, command: str, shell: str, env: dict) -> None:
         if self.using_pty:
             if pty is None:  # Encountered ImportError
                 sys.exit(
@@ -1506,10 +1504,10 @@ class Result:
         encoding: Optional[str] = None,
         command: str = "",
         shell: str = "",
-        env: Optional[Dict[str, Any]] = None,
+        env: Optional[dict] = None,
         exited: int = 0,
         pty: bool = False,
-        hide: Tuple[str, ...] = tuple(),
+        hide: tuple[str, ...] = tuple(),
     ) -> None:
         self.stdout = stdout
         self.stderr = stderr
@@ -1664,7 +1662,7 @@ def normalize_hide(
     val: Any,
     out_stream: Optional[str] = None,
     err_stream: Optional[str] = None,
-) -> Tuple[str, ...]:
+) -> tuple[str, ...]:
     # Normalize to list-of-stream-names
     hide_vals = (None, False, "out", "stdout", "err", "stderr", "both", True)
     if val not in hide_vals:

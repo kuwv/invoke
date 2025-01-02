@@ -3,15 +3,7 @@ import re
 from contextlib import contextmanager
 from itertools import cycle
 from os import PathLike
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generator,
-    Iterator,
-    List,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Optional, Union
 from unittest.mock import Mock
 
 from .config import Config, DataProxy
@@ -20,6 +12,7 @@ from .runners import Result
 from .watchers import FailingResponder
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
     from invoke.runners import Runner
 
 
@@ -64,12 +57,12 @@ class Context(DataProxy):
         #: A list of commands to run (via "&&") before the main argument to any
         #: `run` or `sudo` calls. Note that the primary API for manipulating
         #: this list is `prefix`; see its docs for details.
-        command_prefixes: List[str] = []
+        command_prefixes: list[str] = []
         self._set(command_prefixes=command_prefixes)
         #: A list of directories to 'cd' into before running commands with
         #: `run` or `sudo`; intended for management via `cd`, please see its
         #: docs for details.
-        command_cwds: List[str] = []
+        command_cwds: list[str] = []
         self._set(command_cwds=command_cwds)
 
     @property
@@ -263,7 +256,7 @@ class Context(DataProxy):
         return " && ".join(prefixes + [command])
 
     @contextmanager
-    def prefix(self, command: str) -> Generator[None, None, None]:
+    def prefix(self, command: str) -> "Iterator":
         """
         Prefix all nested `run`/`sudo` commands with given command plus ``&&``.
 
@@ -343,7 +336,7 @@ class Context(DataProxy):
         return str(os.path.join(*paths))
 
     @contextmanager
-    def cd(self, path: Union[PathLike, str]) -> Generator[None, None, None]:
+    def cd(self, path: Union[PathLike, str]) -> "Iterator":
         """
         Context manager that keeps directory state when executing commands.
 
@@ -498,7 +491,7 @@ class MockContext(Context):
             # Wrap the method in a Mock
             self._set(method, Mock(wraps=getattr(self, method)))
 
-    def _normalize(self, value: Any) -> Iterator[Any]:
+    def _normalize(self, value: Any) -> "Iterator[Any]":
         # First turn everything into an iterable
         if not hasattr(value, "__iter__") or isinstance(value, str):
             value = [value]

@@ -9,12 +9,13 @@ not be included in the Sphinx API documentation.
 """
 
 import os
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 from .exceptions import AmbiguousEnvVar, UncastableEnvVar
 from .util import debug
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping, Sequence
     from .config import Config
 
 
@@ -22,9 +23,9 @@ class Environment:
     def __init__(self, config: "Config", prefix: str) -> None:
         self._config = config
         self._prefix = prefix
-        self.data: Dict[str, Any] = {}  # Accumulator
+        self.data: dict = {}  # Accumulator
 
-    def load(self) -> Dict[str, Any]:
+    def load(self) -> dict:
         """
         Return a nested dict containing values from `os.environ`.
 
@@ -49,8 +50,8 @@ class Environment:
         return self.data
 
     def _crawl(
-        self, key_path: List[str], env_vars: Mapping[str, Sequence[str]]
-    ) -> Dict[str, Any]:
+        self, key_path: list[str], env_vars: "Mapping[str, Sequence[str]]"
+    ) -> dict:
         """
         Examine config at location ``key_path`` & return potential env vars.
 
@@ -64,7 +65,7 @@ class Environment:
 
         Returns another dictionary of new keypairs as per above.
         """
-        new_vars: Dict[str, List[str]] = {}
+        new_vars: dict[str, list[str]] = {}
         obj = self._path_get(key_path)
         # Sub-dict -> recurse
         if (
@@ -88,10 +89,10 @@ class Environment:
             new_vars[self._to_env_var(key_path)] = key_path
         return new_vars
 
-    def _to_env_var(self, key_path: Iterable[str]) -> str:
+    def _to_env_var(self, key_path: "Iterable[str]") -> str:
         return "_".join(key_path).upper()
 
-    def _path_get(self, key_path: Iterable[str]) -> "Config":
+    def _path_get(self, key_path: "Iterable[str]") -> "Config":
         # Gets are from self._config because that's what determines valid env
         # vars and/or values for typecasting.
         obj = self._config
@@ -99,7 +100,7 @@ class Environment:
             obj = obj[key]
         return obj
 
-    def _path_set(self, key_path: Sequence[str], value: str) -> None:
+    def _path_set(self, key_path: "Sequence[str]", value: str) -> None:
         # Sets are to self.data since that's what we are presenting to the
         # outer config object and debugging.
         obj = self.data

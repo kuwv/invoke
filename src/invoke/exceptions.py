@@ -9,7 +9,7 @@ condition in a way easily told apart from other, truly unexpected errors".
 from pprint import pformat
 from textwrap import dedent
 from traceback import format_exception
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from .parser import ParserContext
@@ -54,7 +54,7 @@ class Failure(Exception):
         self.result = result
         self.reason = reason
 
-    def streams_for_display(self) -> Tuple[str, str]:
+    def streams_for_display(self) -> tuple[str, str]:
         """
         Return stdout/err streams as necessary for error display.
 
@@ -294,7 +294,7 @@ class UnpicklableConfigMember(Exception):
     """
 
 
-def _printable_kwargs(kwargs: Any) -> Dict[str, Any]:
+def _printable_kwargs(kwargs: Any) -> dict:
     """
     Return print-friendly version of a thread-related ``kwargs`` dict.
 
@@ -342,9 +342,9 @@ class ThreadException(Exception):
     #:     Thread kwargs which appear to be very long (e.g. IO
     #:     buffers) will be truncated when printed, to avoid huge
     #:     unreadable error display.
-    exceptions: Tuple["ExceptionWrapper", ...] = tuple()
+    exceptions: tuple["ExceptionWrapper", ...] = tuple()
 
-    def __init__(self, exceptions: List["ExceptionWrapper"]) -> None:
+    def __init__(self, exceptions: list["ExceptionWrapper"]) -> None:
         self.exceptions = tuple(exceptions)
 
     def __str__(self) -> str:
