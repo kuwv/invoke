@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import copy
+from collections import deque
+from itertools import zip_longest
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional, Union
 
@@ -95,6 +99,8 @@ class Collection:
         See individual methods' API docs for details.
         """
         # Initialize
+        self.__parent: Optional[Collection] = None
+        self.name = None
         self.tasks = Lexicon()
         self.collections = Lexicon()
         self.default: Optional[str] = None
@@ -143,8 +149,35 @@ class Collection:
             )
         return False
 
-    def __bool__(self) -> bool:
-        return bool(self.task_names)
+    # def __getattr__(self, name: str) -> Any:
+    #     executor = Executor(self, self.config)
+    #     executor.execute(name)
+
+    def __iter__(self) -> Collection:
+        self.__queue = deque([self])
+        return self
+
+    def __next__(self) -> Collection:
+        # simple breadth-first iteration
+        if self.__queue:
+            x = self.__queue.pop()
+            if len(x.collections.values()) > 0:
+                self.__queue.extendleft(x.collections.values())
+            return x
+        raise StopIteration
+
+    def __reversed__(self) -> Iterator[Collection]:
+        target: Optional[Collection] = self
+        while target:
+            yield target
+            target = target.parent
+
+    def __repr__(self) -> str:
+        task_names = list(self.tasks.keys())
+        collections = [f"{x}..." for x in self.collections.keys()]
+        return "<Collection {!r}: {}>".format(
+            self.name, ", ".join(sorted(task_names) + sorted(collections))
+        )
 
     @classmethod
     def from_module(
@@ -240,6 +273,31 @@ class Collection:
             collection.configure(config)
         return collection
 
+    @property
+    def path(self) -> str:
+        """Get the path of this collection."""
+        return ".".join(reversed([x.name for x in reversed(self)]))
+
+    @property
+    def parent(self) -> Optional[Collection]:
+        """Get parent collection."""
+        return self.__parent
+
+    @parent.setter
+    def parent(self, collection: Collection) -> None:
+        if self.__parent is None:
+            self.__parent = collection
+
+    def _add_object(self, obj: Any, name: Optional[str] = None) -> None:
+        method: Callable
+        if isinstance(obj, Task):
+            method = self.add_task
+        elif isinstance(obj, (Collection, ModuleType)):
+            method = self.add_collection
+        else:
+            raise TypeError(f"No idea how to insert {type(obj)}!")
+        method(obj, name=name)
+
     def add_task(
         self,
         task: "Task",
@@ -283,6 +341,7 @@ class Collection:
                 + "{!r} already"
             )
             raise ValueError(err.format(name))
+        task.parent = self
         self.tasks[name] = task
         for alias in list(task.aliases) + list(aliases or []):
             self.tasks.alias(self.transform(alias), to=name)
@@ -327,11 +386,53 @@ class Collection:
                 "Name conflict: this collection has a task named {!r} already"
             )
             raise ValueError(err.format(name))
+        coll.parent = self
         # Insert
         self.collections[name] = coll
         if default:
             self._check_default_collision(name)
             self.default = name
+
+    def get_collection(self, path: str = ".") -> Collection:
+        """Get collection."""
+        current = self
+        if path != '.':  # ignore self calls
+            target_subpaths = path.split('.')
+            if path.startswith('.'):  # path is relative
+                target_subpaths = target_subpaths[1:]
+                while target_subpaths and target_subpaths[0] == '':
+                    if current.parent is not None:
+                        current = current.parent
+                        target_subpaths = target_subpaths[1:]
+                    else:
+                        raise Exception('namespace parent depth exceeded')
+            else:  # path is absolute
+                source_subpaths = self.path.split('.')
+                for i, x in enumerate(
+                    zip_longest(source_subpaths, target_subpaths, fillvalue='')
+                ):
+                    # check when paths diverge
+                    if x[0] != x[1]:
+                        # paths are unrelated
+                        if i == 0:
+                            raise Exception('no relative path exists between namespaces')
+                        break
+                    else:
+                        # traverse matches
+                        source_subpaths = source_subpaths[1:]
+                        target_subpaths = target_subpaths[1:]
+                # if source_subpaths exist then target is ancestor
+                if source_subpaths and not target_subpaths:
+                    while source_subpaths:
+                        current = current.parent
+                        source_subpaths = source_subpaths[1:]
+            # if target_subpaths exist then target is descendent of current
+            for subpath in target_subpaths:
+                if subpath in current.collections.keys():
+                    current = current.collections[subpath]
+                else:
+                    raise Exception('child collection does not exist')
+        return current
 
     def _check_default_collision(self, name: str) -> None:
         if self.default:

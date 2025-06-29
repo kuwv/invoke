@@ -3,6 +3,8 @@ This module contains the core `.Task` class & convenience decorators used to
 generate new tasks.
 """
 
+from __future__ import annotations
+
 import inspect
 import types
 from copy import deepcopy
@@ -26,6 +28,7 @@ if TYPE_CHECKING:
     from inspect import Signature
 
     from .config import Config
+    from .collection import Collection
 
 T = TypeVar("T", bound="Callable")
 
@@ -69,6 +72,7 @@ class Task(Generic[T]):
         iterable: "Optional[Iterable[str]]" = None,
         incrementable: "Optional[Iterable[str]]" = None,
     ) -> None:
+        self.__parent: Optional[Collection] = None
         # Real callable
         self.body = body
         update_wrapper(self, self.body)
@@ -95,10 +99,6 @@ class Task(Generic[T]):
         self.times_called = 0
         # Whether to print return value post-execution
         self.autoprint = autoprint
-
-    @property
-    def name(self) -> str:
-        return self._name or self.__name__
 
     def __repr__(self) -> str:
         aliases = ""
@@ -428,7 +428,10 @@ class Call:
 
         .. versionadded:: 1.0
         """
-        return Context(config=config)
+        context = Context(config=config)
+        # context.namespace = self.parent.path
+        context.task = self
+        return context
 
     def clone_data(self) -> dict:
         """

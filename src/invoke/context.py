@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import os
 import re
 from contextlib import contextmanager
+from functools import partial
 from itertools import cycle
 from os import PathLike
 from typing import TYPE_CHECKING, Any, Optional, Union
@@ -14,6 +17,7 @@ from .watchers import FailingResponder
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from invoke.runners import Runner
+    from invoke.tasks import Task
 
 
 class Context(DataProxy):
@@ -54,6 +58,7 @@ class Context(DataProxy):
         #: ``c.foo`` returns the same value as ``c.config['foo']``.
         config = config if config is not None else Config()
         self._set(_config=config)
+        self._set(_task=None)
         #: A list of commands to run (via "&&") before the main argument to any
         #: `run` or `sudo` calls. Note that the primary API for manipulating
         #: this list is `prefix`; see its docs for details.
@@ -64,6 +69,26 @@ class Context(DataProxy):
         #: docs for details.
         command_cwds: list[str] = []
         self._set(command_cwds=command_cwds)
+
+    def __call__(self, namespace: str) -> Any:
+        if self.task and self.task.parent:
+            return self.task.parent.get_collection(namespace)
+        raise Execption('unable to locate namespace', namespace)
+
+    def __getattr__(self, name: str) -> Any:
+        # do not attempt to resolve missing dunders
+        if name.startswith('__'):
+            raise AttributeError
+        # look for sibling task within namespace
+        if (
+            self.task
+            and self.task.parent
+            and name in self.task.parent.tasks
+        ):
+            tasks = [v for k, v in self.task.parent.tasks.items() if k == name]
+            if len(tasks) == 1:
+                return partial(tasks[0], self)
+        return super().__getattr__(name)
 
     @property
     def config(self) -> Config:
@@ -79,6 +104,15 @@ class Context(DataProxy):
         # call list at start of a session, with the final config filled in at
         # runtime.
         self._set(_config=value)
+
+    @property
+    def task(self) -> Optional[Task]:
+        return self._task
+
+    @task.setter
+    def task(self, value: Task) -> None:
+        if self._task is None:
+            self._set(_task=value)
 
     def run(self, command: str, **kwargs: Any) -> Optional[Result]:
         """
