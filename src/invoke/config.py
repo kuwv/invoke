@@ -12,7 +12,7 @@ try:
     # pylint: disable-next=ungrouped-imports
     from importlib.machinery import SourceFileLoader
 except ImportError:  # PyPy3
-    from importlib._bootstrap import (  # type: ignore[no-redef]
+    from importlib._bootstrap import (  # type: ignore[attr-defined,no-redef]
         _SourceFileLoader as SourceFileLoader,
     )
 
