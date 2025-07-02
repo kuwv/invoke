@@ -139,6 +139,10 @@ class Task(Generic[T]):
     def called(self) -> bool:
         return self.times_called > 0
 
+    @property
+    def name(self) -> str:
+        return self._name or self.__name__
+
     def argspec(self, body: "Callable") -> "Signature":
         """
         Returns a modified `inspect.Signature` based on that of ``body``.
