@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 from lexicon import Lexicon
 
 from .config import copy_dict, merge_dicts
+from .context import Context
 from .parser import Context as ParserContext
 from .tasks import Task
 from .util import helpline
@@ -433,6 +434,16 @@ class Collection:
                 else:
                     raise Exception('child collection does not exist')
         return current
+
+    def make_context(self, config: "Config") -> Context:
+        """
+        Generate a `.Context` appropriate for this call, with given config.
+
+        .. versionadded:: 1.0
+        """
+        context = Context(config=config)
+        context.namespace = self
+        return context
 
     def _check_default_collision(self, name: str) -> None:
         if self.default:

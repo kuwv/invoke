@@ -135,7 +135,7 @@ class Executor:
             # Get final context from the Call (which will know how to generate
             # an appropriate one; e.g. subclasses might use extra data from
             # being parameterized), handing in this config for use there.
-            context = call.make_context(config)
+            context = self.collection.make_context(config)
             args = (context, *call.args)
             result = call.task(*args, **call.kwargs)
             if autoprint:

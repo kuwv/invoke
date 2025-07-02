@@ -17,7 +17,6 @@ from .watchers import FailingResponder
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from invoke.runners import Runner
-    from invoke.tasks import Task
 
 
 class Context(DataProxy):
@@ -58,7 +57,7 @@ class Context(DataProxy):
         #: ``c.foo`` returns the same value as ``c.config['foo']``.
         config = config if config is not None else Config()
         self._set(_config=config)
-        self._set(_task=None)
+        self._set(_namespace=None)
         #: A list of commands to run (via "&&") before the main argument to any
         #: `run` or `sudo` calls. Note that the primary API for manipulating
         #: this list is `prefix`; see its docs for details.
@@ -70,9 +69,13 @@ class Context(DataProxy):
         command_cwds: list[str] = []
         self._set(command_cwds=command_cwds)
 
-    def __call__(self, namespace: str) -> Any:
-        if self.task and self.task.parent:
-            return self.task.parent.get_collection(namespace)
+    def __call__(self, namespace: str) -> Context:
+        if self.namespace:
+            return (
+                self.namespace
+                .get_collection(namespace)
+                .make_context(self.config)
+            )
         raise Execption('unable to locate namespace', namespace)
 
     def __getattr__(self, name: str) -> Any:
@@ -81,11 +84,10 @@ class Context(DataProxy):
             raise AttributeError
         # look for sibling task within namespace
         if (
-            self.task
-            and self.task.parent
-            and name in self.task.parent.tasks
+            self.namespace
+            and name in self.namespace.tasks
         ):
-            tasks = [v for k, v in self.task.parent.tasks.items() if k == name]
+            tasks = [v for k, v in self.namespace.tasks.items() if k == name]
             if len(tasks) == 1:
                 return partial(tasks[0], self)
         return super().__getattr__(name)
@@ -106,13 +108,13 @@ class Context(DataProxy):
         self._set(_config=value)
 
     @property
-    def task(self) -> Optional[Task]:
-        return self._task
+    def namespace(self) -> Optional[Collection]:
+        return self._namespace
 
-    @task.setter
-    def task(self, value: Task) -> None:
-        if self._task is None:
-            self._set(_task=value)
+    @namespace.setter
+    def namespace(self, value: Collection) -> None:
+        if self._namespace is None:
+            self._set(_namespace=value)
 
     def run(self, command: str, **kwargs: Any) -> Optional[Result]:
         """
