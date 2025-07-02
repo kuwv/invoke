@@ -292,7 +292,7 @@ class Context(DataProxy):
         return " && ".join(prefixes + [command])
 
     @contextmanager
-    def prefix(self, command: str) -> "Iterator":
+    def prefix(self, command: str) -> Iterator:
         """
         Prefix all nested `run`/`sudo` commands with given command plus ``&&``.
 
@@ -372,7 +372,7 @@ class Context(DataProxy):
         return str(os.path.join(*paths))
 
     @contextmanager
-    def cd(self, path: Union[PathLike, str]) -> "Iterator":
+    def cd(self, path: Union[PathLike, str]) -> Iterator:
         """
         Context manager that keeps directory state when executing commands.
 

@@ -134,6 +134,9 @@ class Collection:
             raise TypeError(f"No idea how to insert {type(obj)}!")
         method(obj, name=name)
 
+    def __bool__(self) -> bool:
+        return bool(self.task_names)
+
     def __repr__(self) -> str:
         task_names = list(self.tasks.keys())
         collections = [f"{x}..." for x in self.collections.keys()]
@@ -301,7 +304,7 @@ class Collection:
 
     def add_task(
         self,
-        task: "Task",
+        task: Task,
         name: Optional[str] = None,
         aliases: Optional[tuple[str, ...]] = None,
         default: Optional[bool] = None,
@@ -342,7 +345,6 @@ class Collection:
                 + "{!r} already"
             )
             raise ValueError(err.format(name))
-        task.parent = self
         self.tasks[name] = task
         for alias in list(task.aliases) + list(aliases or []):
             self.tasks.alias(self.transform(alias), to=name)
@@ -352,7 +354,7 @@ class Collection:
 
     def add_collection(
         self,
-        coll: Union["Collection", ModuleType],
+        coll: Union[Collection, ModuleType],
         name: Optional[str] = None,
         default: Optional[bool] = None,
     ) -> None:
@@ -435,7 +437,7 @@ class Collection:
                     raise Exception('child collection does not exist')
         return current
 
-    def make_context(self, config: "Config") -> Context:
+    def make_context(self, config: Config) -> Context:
         """
         Generate a `.Context` appropriate for this call, with given config.
 
@@ -465,7 +467,7 @@ class Collection:
         rest = ".".join(parts)
         return coll, rest
 
-    def subcollection_from_path(self, path: str) -> "Collection":
+    def subcollection_from_path(self, path: str) -> Collection:
         """
         Given a ``path`` to a subcollection, return that subcollection.
 
@@ -499,9 +501,7 @@ class Collection:
         task, config = self.collections[coll].task_with_config(rest)
         return task, dict(config, **ours)
 
-    def task_with_config(
-        self, name: Optional[str]
-    ) -> tuple[str, dict]:
+    def task_with_config(self, name: Optional[str]) -> tuple[str, dict]:
         """
         Return task named ``name`` plus its configuration dict.
 

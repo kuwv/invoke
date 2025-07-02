@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 from importlib.machinery import ModuleSpec
@@ -18,7 +20,7 @@ class Loader:
     .. versionadded:: 1.0
     """
 
-    def __init__(self, config: Optional["Config"] = None) -> None:
+    def __init__(self, config: Optional[Config] = None) -> None:
         """
         Set up a new loader with some `.Config`.
 

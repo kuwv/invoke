@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import threading
 from typing import TYPE_CHECKING
@@ -38,7 +40,7 @@ class StreamWatcher(threading.local):
     .. versionadded:: 1.0
     """
 
-    def submit(self, stream: str) -> "Iterable[str]":
+    def submit(self, stream: str) -> Iterable[str]:
         """
         Act on ``stream`` data, potentially returning responses.
 
@@ -130,7 +132,7 @@ class FailingResponder(Responder):
         self.failure_index = 0
         self.tried = False
 
-    def submit(self, stream: str) -> "Iterator[str]":
+    def submit(self, stream: str) -> Iterator[str]:
         # Behave like regular Responder initially
         response = super().submit(stream)
         # Also check stream for our failure sentinel

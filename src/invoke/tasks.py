@@ -58,21 +58,20 @@ class Task(Generic[T]):
     # except a debug shell whose frame is exactly inside this class.
     def __init__(
         self,
-        body: "Callable",
+        body: Callable,
         name: Optional[str] = None,
-        aliases: "Iterable[str]" = (),
-        positional: "Optional[Iterable[str]]" = None,
-        optional: "Iterable[str]" = (),
+        aliases: Iterable[str] = (),
+        positional: Optional[Iterable[str]] = None,
+        optional: Iterable[str] = (),
         default: bool = False,
         auto_shortflags: bool = True,
         help: Optional[dict] = None,
         pre: Optional[Union[list[str], str]] = None,
         post: Optional[Union[list[str], str]] = None,
         autoprint: bool = False,
-        iterable: "Optional[Iterable[str]]" = None,
-        incrementable: "Optional[Iterable[str]]" = None,
+        iterable: Optional[Iterable[str]] = None,
+        incrementable: Optional[Iterable[str]] = None,
     ) -> None:
-        self.__parent: Optional[Collection] = None
         # Real callable
         self.body = body
         update_wrapper(self, self.body)
@@ -143,7 +142,7 @@ class Task(Generic[T]):
     def name(self) -> str:
         return self._name or self.__name__
 
-    def argspec(self, body: "Callable") -> "Signature":
+    def argspec(self, body: Callable) -> Signature:
         """
         Returns a modified `inspect.Signature` based on that of ``body``.
 
@@ -175,7 +174,7 @@ class Task(Generic[T]):
         return sig.replace(parameters=params[1:])
 
     def fill_implicit_positionals(
-        self, positional: "Optional[Iterable[str]]"
+        self, positional: Optional[Iterable[str]]
     ) -> "Iterable[str]":
         # If positionals is None, everything lacking a default
         # value will be automatically considered positional.
@@ -284,7 +283,7 @@ class Task(Generic[T]):
         return args
 
 
-def task(*args: Any, **kwargs: Any) -> "Task[T]":
+def task(*args: Any, **kwargs: Any) -> Task[T]:
     """
     Marks wrapped callable object as a valid Invoke task.
 
@@ -350,7 +349,7 @@ def task(*args: Any, **kwargs: Any) -> "Task[T]":
             )
         kwargs["pre"] = args
 
-    def inner(body: "Callable") -> Task[T]:
+    def inner(body: Callable) -> Task[T]:
         _task = klass(body, **kwargs)
         return _task
 
@@ -371,7 +370,7 @@ class Call:
 
     def __init__(
         self,
-        task: "Task",
+        task: Task,
         called_as: Optional[str] = None,
         args: Optional[tuple[str, ...]] = None,
         kwargs: Optional[dict] = None,
@@ -401,7 +400,7 @@ class Call:
     def __getattr__(self, name: str) -> Any:
         return getattr(self.task, name)
 
-    def __deepcopy__(self, memo: object) -> "Call":
+    def __deepcopy__(self, memo: object) -> Call:
         return self.clone()
 
     def __repr__(self) -> str:
@@ -426,17 +425,6 @@ class Call:
                 return False
         return True
 
-    def make_context(self, config: "Config") -> Context:
-        """
-        Generate a `.Context` appropriate for this call, with given config.
-
-        .. versionadded:: 1.0
-        """
-        context = Context(config=config)
-        # context.namespace = self.parent.path
-        context.task = self
-        return context
-
     def clone_data(self) -> dict:
         """
         Return keyword args suitable for cloning this call into another.
@@ -452,7 +440,7 @@ class Call:
 
     def clone(
         self,
-        into: Optional[Type["Call"]] = None,
+        into: Optional[Type[Call]] = None,
         with_: Optional[dict] = None,
     ) -> "Call":
         """
@@ -484,7 +472,7 @@ class Call:
         return klass(**data)
 
 
-def call(task: "Task", *args: Any, **kwargs: Any) -> "Call":
+def call(task: Task, *args: Any, **kwargs: Any) -> Call:
     """
     Describes execution of a `.Task`, typically with pre-supplied arguments.
 

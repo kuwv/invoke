@@ -8,6 +8,8 @@ This module is currently considered private/an implementation detail and should
 not be included in the Sphinx API documentation.
 """
 
+from __future__ import annotations
+
 import os
 from typing import TYPE_CHECKING, Any
 
@@ -20,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class Environment:
-    def __init__(self, config: "Config", prefix: str) -> None:
+    def __init__(self, config: Config, prefix: str) -> None:
         self._config = config
         self._prefix = prefix
         self.data: dict = {}  # Accumulator
@@ -50,7 +52,7 @@ class Environment:
         return self.data
 
     def _crawl(
-        self, key_path: list[str], env_vars: "Mapping[str, Sequence[str]]"
+        self, key_path: list[str], env_vars: Mapping[str, Sequence[str]]
     ) -> dict:
         """
         Examine config at location ``key_path`` & return potential env vars.
@@ -89,10 +91,10 @@ class Environment:
             new_vars[self._to_env_var(key_path)] = key_path
         return new_vars
 
-    def _to_env_var(self, key_path: "Iterable[str]") -> str:
+    def _to_env_var(self, key_path: Iterable[str]) -> str:
         return "_".join(key_path).upper()
 
-    def _path_get(self, key_path: "Iterable[str]") -> "Config":
+    def _path_get(self, key_path: Iterable[str]) -> Config:
         # Gets are from self._config because that's what determines valid env
         # vars and/or values for typecasting.
         obj = self._config
@@ -100,7 +102,7 @@ class Environment:
             obj = obj[key]
         return obj
 
-    def _path_set(self, key_path: "Sequence[str]", value: str) -> None:
+    def _path_set(self, key_path: Sequence[str], value: str) -> None:
         # Sets are to self.data since that's what we are presenting to the
         # outer config object and debugging.
         obj = self.data

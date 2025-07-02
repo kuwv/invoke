@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import getpass
 import inspect
 import json
@@ -36,16 +38,16 @@ class Program:
     """
 
     argv: list[str]
-    config: "Config"
-    collection: "Collection"
-    core: "ParseResult"
-    core_via_tasks: "ParserContext"
+    config: Config
+    collection: Collection
+    core: ParseResult
+    core_via_tasks: ParserContext
     list_root: Optional[str]
     list_depth: Optional[int]
     list_format: str
-    parser: "Parser"
-    scoped_collection: "Collection"
-    tasks: "ParseResult"
+    parser: Parser
+    scoped_collection: Collection
+    tasks: ParseResult
 
     # Other class-level global variables a subclass might override sometime
     # maybe?
@@ -58,12 +60,12 @@ class Program:
     def __init__(
         self,
         version: Optional[str] = None,
-        namespace: Optional["Collection"] = None,
+        namespace: Optional[Collection] = None,
         name: Optional[str] = None,
         binary: Optional[str] = None,
-        loader_class: Optional[Type["Loader"]] = None,
-        executor_class: Optional[Type["Executor"]] = None,
-        config_class: Optional[Type["Config"]] = None,
+        loader_class: Optional[Type[Loader]] = None,
+        executor_class: Optional[Type[Executor]] = None,
+        config_class: Optional[Type[Config]] = None,
         binary_names: Optional[list[str]] = None,
     ) -> None:
         """
@@ -618,7 +620,7 @@ class Program:
             if arg.got_value:
                 context.args[key]._value = arg._value
 
-    def _make_parser(self) -> "Parser":
+    def _make_parser(self) -> Parser:
         return Parser(
             initial=self.initial_context,
             contexts=self.collection.to_contexts(
@@ -704,7 +706,7 @@ class Program:
 
     def _make_pairs(
         self,
-        coll: "Collection",
+        coll: Collection,
         ancestors: Optional[list[str]] = None,
     ) -> list[tuple[str, Optional[str]]]:
         if ancestors is None:
@@ -804,7 +806,7 @@ class Program:
         return text
 
     def display_with_columns(
-        self, pairs: "Sequence[tuple[str, Optional[str]]]", extra: str = ""
+        self, pairs: Sequence[tuple[str, Optional[str]]], extra: str = ""
     ) -> None:
         root = self.list_root
         print(self.task_list_opener(extra=extra) + ":\n")
@@ -821,7 +823,7 @@ class Program:
             print(f"Default{specific} task: {default}\n")
 
     def print_columns(
-        self, tuples: "Sequence[tuple[str, Optional[str]]]"
+        self, tuples: Sequence[tuple[str, Optional[str]]]
     ) -> None:
         """
         Print tabbed columns from (name, help) ``tuples``.
@@ -865,7 +867,7 @@ class Program:
                 print(spec.rstrip())
         print("")
 
-    def core_args(self) -> list["Argument"]:
+    def core_args(self) -> list[Argument]:
         """
         Return default core `.Argument` objects, as a list.
 
@@ -969,7 +971,7 @@ class Program:
             ),
         ]
 
-    def task_args(self) -> list["Argument"]:
+    def task_args(self) -> list[Argument]:
         """
         Return default task-related `.Argument` objects, as a list.
 

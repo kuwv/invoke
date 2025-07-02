@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import io
 import logging
 import os
@@ -57,7 +59,7 @@ def task_name_sort_key(name: str) -> tuple[list[str], str]:
 
 # TODO: Make part of public API sometime
 @contextmanager
-def cd(where: str) -> "Iterator":
+def cd(where: str) -> Iterator:
     cwd = os.getcwd()
     os.chdir(where)
     try:
@@ -221,7 +223,7 @@ class ExceptionHandlingThread(Thread):
                 name,
             )
 
-    def exception(self) -> Optional["ExceptionWrapper"]:
+    def exception(self) -> Optional[ExceptionWrapper]:
         """
         If an exception occurred, return an `.ExceptionWrapper` around it.
 

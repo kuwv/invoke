@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import json
 import os
@@ -74,7 +76,7 @@ class DataProxy:
     def from_data(
         cls,
         data: dict,
-        root: Optional["DataProxy"] = None,
+        root: Optional[DataProxy] = None,
         keypath: tuple[str, ...] = tuple(),
     ) -> "DataProxy":
         """
@@ -134,7 +136,7 @@ class DataProxy:
         else:
             super().__setattr__(key, value)
 
-    def __iter__(self) -> "Iterator[dict]":
+    def __iter__(self) -> Iterator[dict]:
         # For some reason Python is ignoring our __hasattr__ when determining
         # whether we support __iter__. BOO
         yield from iter(self._config)
@@ -981,7 +983,7 @@ class Config(DataProxy):
             # the negative? Just a branch here based on 'name'?
             debug("%s not found, skipping", desc)
 
-    def clone(self, into: Optional[Type["Config"]] = None) -> "Config":
+    def clone(self, into: Optional[Type[Config]] = None) -> Config:
         """
         Return a copy of this configuration object.
 

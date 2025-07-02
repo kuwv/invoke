@@ -6,6 +6,8 @@ exceptions used for message-passing" to simply "we needed to express an error
 condition in a way easily told apart from other, truly unexpected errors".
 """
 
+from __future__ import annotations
+
 from pprint import pformat
 from textwrap import dedent
 from traceback import format_exception
@@ -49,7 +51,7 @@ class Failure(Exception):
     """
 
     def __init__(
-        self, result: "Result", reason: Optional["WatcherError"] = None
+        self, result: Result, reason: Optional[WatcherError] = None
     ) -> None:
         self.result = result
         self.reason = reason
@@ -182,7 +184,7 @@ class AuthFailure(Failure):
     .. versionadded:: 1.0
     """
 
-    def __init__(self, result: "Result", prompt: str) -> None:
+    def __init__(self, result: Result, prompt: str) -> None:
         super().__init__(result)
         self.prompt = prompt
 
@@ -201,7 +203,7 @@ class ParseError(Exception):
     """
 
     def __init__(
-        self, msg: str, context: Optional["ParserContext"] = None
+        self, msg: str, context: Optional[ParserContext] = None
     ) -> None:
         super().__init__(msg)
         self.context = context
@@ -344,7 +346,7 @@ class ThreadException(Exception):
     #:     unreadable error display.
     exceptions: tuple["ExceptionWrapper", ...] = tuple()
 
-    def __init__(self, exceptions: list["ExceptionWrapper"]) -> None:
+    def __init__(self, exceptions: list[ExceptionWrapper]) -> None:
         self.exceptions = tuple(exceptions)
 
     def __str__(self) -> str:

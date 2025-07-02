@@ -516,17 +516,6 @@ class Call_:
             call = Call(self.task, called_as="mytask")
             assert str(call) == "<Call 'mytask', args: (), kwargs: {}>"
 
-    class make_context:
-        def requires_config_argument(self):
-            with raises(TypeError):
-                Call(_).make_context()
-
-        def creates_a_new_Context_from_given_config(self):
-            conf = Config(defaults={"foo": "bar"})
-            c = Call(_).make_context(conf)
-            assert isinstance(c, Context)
-            assert c.foo == "bar"
-
     class clone:
         def returns_new_but_equivalent_object(self):
             orig = Call(self.task)

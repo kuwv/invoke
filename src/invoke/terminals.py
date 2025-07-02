@@ -7,6 +7,8 @@ This is its own module to abstract away what would otherwise be distracting
 logic-flow interruptions.
 """
 
+from __future__ import annotations
+
 import os
 import select
 import sys
@@ -169,7 +171,7 @@ def cbreak_already_set(stream: IO) -> bool:
 
 
 @contextmanager
-def character_buffered(stream: IO) -> "Iterator":
+def character_buffered(stream: IO) -> Iterator:
     """
     Force local terminal ``stream`` be character, not line, buffered.
 

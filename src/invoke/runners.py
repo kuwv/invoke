@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import errno
 import locale
 import os
@@ -71,14 +73,14 @@ class Runner:
     opts: dict
     result_kwargs: dict
     using_pty: bool
-    threads: dict["Callable", ExceptionHandlingThread]
+    threads: dict[Callable, ExceptionHandlingThread]
     stdout: list[str]
     stderr: list[str]
     streams: dict
     read_chunk_size: int = 1000
     input_sleep: float = 0.01
 
-    def __init__(self, context: "Context") -> None:
+    def __init__(self, context: Context) -> None:
         """
         Create a new runner with a handle on some `.Context`.
 
@@ -118,7 +120,7 @@ class Runner:
         self.warned_about_pty_fallback = False
         #: A list of `.StreamWatcher` instances for use by `respond`. Is filled
         #: in at runtime by `run`.
-        self.watchers: list["StreamWatcher"] = []
+        self.watchers: list[StreamWatcher] = []
         # Optional timeout timer placeholder
         self._timer: Optional[threading.Timer] = None
         # Async flags (initialized for 'finally' referencing in case something
@@ -127,16 +129,16 @@ class Runner:
         self._disowned = False
 
     @overload
-    def run(self, command: str, *, disowned: None, **kwargs: Any) -> "Result":
+    def run(self, command: str, *, disowned: None, **kwargs: Any) -> Result:
         ...
 
     @overload
     def run(
         self, command: str, *, disowned: bool, **kwargs: Any
-    ) -> Optional["Result"]:
+    ) -> Optional[Result]:
         ...
 
-    def run(self, command: str, **kwargs: Any) -> Optional["Result"]:
+    def run(self, command: str, **kwargs: Any) -> Optional[Result]:
         """
         Execute ``command``, returning an instance of `Result` once complete.
 
@@ -442,7 +444,7 @@ class Runner:
             "encoding": self.encoding,
         }
 
-    def _run_body(self, command: str, **kwargs: Any) -> Optional["Result"]:
+    def _run_body(self, command: str, **kwargs: Any) -> Optional[Result]:
         # Prepare all the bits n bobs.
         self._setup(command, kwargs)
         # If dry-run, stop here.
@@ -464,7 +466,7 @@ class Runner:
         # Wrap up or promise that we will, depending
         return self.make_promise() if self._asynchronous else self._finish()
 
-    def make_promise(self) -> "Promise":
+    def make_promise(self) -> Promise:
         """
         Return a `Promise` allowing async control of the rest of lifecycle.
 
@@ -472,7 +474,7 @@ class Runner:
         """
         return Promise(self)
 
-    def _finish(self) -> "Result":
+    def _finish(self) -> Result:
         # Wait for subprocess to run, forwarding signals as we get them.
         try:
             while True:
@@ -594,7 +596,7 @@ class Runner:
         self.opts = opts
         self.streams = {"out": out_stream, "err": err_stream, "in": in_stream}
 
-    def _collate_result(self, watcher_errors: list[WatcherError]) -> "Result":
+    def _collate_result(self, watcher_errors: list[WatcherError]) -> Result:
         # At this point, we had enough success that we want to be returning or
         # raising detailed info about our execution; so we generate a Result.
         stdout = "".join(self.stdout)
@@ -622,7 +624,7 @@ class Runner:
         )
         return result
 
-    def _thread_join_timeout(self, target: "Callable") -> Optional[int]:
+    def _thread_join_timeout(self, target: Callable) -> Optional[int]:
         # Add a timeout to out/err thread joins when it looks like they're not
         # dead but their counterpart is dead; this indicates issue #351 (fixed
         # by #432) where the subproc may hang because its stdout (or stderr) is
@@ -641,7 +643,7 @@ class Runner:
     def create_io_threads(
         self,
     ) -> tuple[
-        dict["Callable", ExceptionHandlingThread], list[str], list[str]
+        dict[Callable, ExceptionHandlingThread], list[str], list[str]
     ]:
         """
         Create and return a dictionary of IO thread worker objects.
@@ -682,7 +684,7 @@ class Runner:
             threads[target] = t
         return threads, stdout, stderr
 
-    def generate_result(self, **kwargs: Any) -> "Result":
+    def generate_result(self, **kwargs: Any) -> Result:
         """
         Create & return a suitable `Result` instance from the given ``kwargs``.
 
@@ -694,7 +696,7 @@ class Runner:
         """
         return Result(**kwargs)
 
-    def read_proc_output(self, reader: "Callable") -> "Iterator[str]":
+    def read_proc_output(self, reader: Callable) -> Iterator[str]:
         """
         Iteratively read & decode bytes from a subprocess' out/err stream.
 
@@ -752,7 +754,7 @@ class Runner:
         buffer_: list[str],
         hide: bool,
         output: IO,
-        reader: "Callable",
+        reader: Callable,
     ) -> None:
         # TODO: store un-decoded/raw bytes somewhere as well...
         for data in self.read_proc_output(reader):
@@ -1156,7 +1158,7 @@ class Runner:
         return default_encoding()
 
     # pylint: disable-next=unused-argument
-    def send_interrupt(self, interrupt: "KeyboardInterrupt") -> None:
+    def send_interrupt(self, interrupt: KeyboardInterrupt) -> None:
         """
         Submit an interrupt signal to the running subprocess.
 
@@ -1246,7 +1248,7 @@ class Local(Runner):
     # parent_fd
     process: "Popen"
 
-    def __init__(self, context: "Context") -> None:
+    def __init__(self, context: Context) -> None:
         super().__init__(context)
         # Bookkeeping var for pty use case
         self.status = 0

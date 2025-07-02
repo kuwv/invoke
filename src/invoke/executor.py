@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Optional, Union
 
 from .config import Config
@@ -23,9 +25,9 @@ class Executor:
 
     def __init__(
         self,
-        collection: "Collection",
-        config: Optional["Config"] = None,
-        core: Optional["ParseResult"] = None,
+        collection: Collection,
+        config: Optional[Config] = None,
+        core: Optional[ParseResult] = None,
     ) -> None:
         """
         Initialize executor with handles to necessary data structures.
@@ -48,7 +50,7 @@ class Executor:
 
     def execute(
         self, *tasks: Union[str, tuple[str, dict], ParserContext]
-    ) -> dict["Task", "Result"]:
+    ) -> dict[Task, Result]:
         """
         Execute one or more ``tasks`` in sequence.
 
@@ -148,7 +150,7 @@ class Executor:
     def normalize(
         self,
         tasks: tuple[Union[str, tuple[str, dict], ParserContext], ...],
-    ) -> list["Call"]:
+    ) -> list[Call]:
         """
         Transform arbitrary task list w/ various types, into `.Call` objects.
 
@@ -173,7 +175,7 @@ class Executor:
             calls = [Call(self.collection[self.collection.default])]
         return calls
 
-    def dedupe(self, calls: list["Call"]) -> list["Call"]:
+    def dedupe(self, calls: list[Call]) -> list[Call]:
         """
         Deduplicate a list of `tasks <.Call>`.
 
@@ -193,7 +195,7 @@ class Executor:
                 debug("%r: found in list already, skipping", call)
         return deduped
 
-    def expand_calls(self, calls: list["Call"]) -> list["Call"]:
+    def expand_calls(self, calls: list[Call]) -> list[Call]:
         """
         Expand a list of `.Call` objects into a near-final list of same.
 

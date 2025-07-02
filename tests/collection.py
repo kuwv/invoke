@@ -5,6 +5,8 @@ from _util import load, support_path
 from pytest import raises
 
 from invoke.collection import Collection
+from invoke.config import Config
+from invoke.context import Context
 from invoke.tasks import Task, task
 
 
@@ -389,6 +391,17 @@ class Collection_:
                 match=r"'bar' cannot be the default because 'foo' already is!",
             ):
                 self.c.add_collection(collection, default=True)
+
+    class make_context:
+        def requires_config_argument(self):
+            with raises(TypeError):
+                Collection().make_context()
+
+        def creates_a_new_Context_from_given_config(self):
+            conf = Config(defaults={"foo": "bar"})
+            c = Collection().make_context(conf)
+            assert isinstance(c, Context)
+            assert c.foo == "bar"
 
     class getitem:
         "__getitem__"
