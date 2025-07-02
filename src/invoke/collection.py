@@ -11,7 +11,7 @@ from lexicon import Lexicon
 from .config import copy_dict, merge_dicts
 from .context import Context
 from .parser import Context as ParserContext
-from .tasks import Task
+from .tasks import Task, task
 from .util import helpline
 
 if TYPE_CHECKING:
@@ -291,6 +291,24 @@ class Collection:
     def parent(self, collection: Collection) -> None:
         if self.__parent is None:
             self.__parent = collection
+
+    def task(self, *args, **kwargs):
+        """Wrap a callable object and register it to the current collection.
+
+        .. versionadded:: 2.2.1
+
+        """
+        t = task(*args, **kwargs)
+        if isinstance(t, Task):
+            self.add_task(t)
+            return t
+
+        def inner(*args, **kwargs):
+            configured_task = t(*args, **kwargs)
+            self.add_task(configured_task)
+            return configured_task
+
+        return inner
 
     def _add_object(self, obj: Any, name: Optional[str] = None) -> None:
         method: Callable
