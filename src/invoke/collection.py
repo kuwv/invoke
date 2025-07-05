@@ -105,7 +105,6 @@ class Collection:
         self.tasks = Lexicon()
         self.collections = Lexicon()
         self.default: Optional[str] = None
-        self.name = None
         self._configuration: dict = {}
         # Specific kwargs if applicable
         self.loaded_from = kwargs.pop("loaded_from", None)
@@ -123,16 +122,6 @@ class Collection:
         # Dispatch kwargs
         for name, obj in kwargs.items():
             self._add_object(obj, name)
-
-    def _add_object(self, obj: Any, name: Optional[str] = None) -> None:
-        method: "Callable"
-        if isinstance(obj, Task):
-            method = self.add_task
-        elif isinstance(obj, (Collection, ModuleType)):
-            method = self.add_collection
-        else:
-            raise TypeError(f"No idea how to insert {type(obj)}!")
-        method(obj, name=name)
 
     def __bool__(self) -> bool:
         return bool(self.task_names)

@@ -70,13 +70,8 @@ class Context(DataProxy):
         self._set(command_cwds=command_cwds)
 
     def __call__(self, namespace: str) -> Context:
-        if self.namespace:
-            return (
-                self.namespace
-                .get_collection(namespace)
-                .make_context(self.config)
-            )
-        raise Execption('unable to locate namespace', namespace)
+        with self.get_context(namespace) as ctx:
+            return ctx
 
     def __getattr__(self, name: str) -> Any:
         # do not attempt to resolve missing dunders
@@ -115,6 +110,17 @@ class Context(DataProxy):
     def namespace(self, value: Collection) -> None:
         if self._namespace is None:
             self._set(_namespace=value)
+
+    @contextmanager
+    def get_context(self, namespace: str) -> Iterator[Context]:
+        if self.namespace:
+            yield (
+                self.namespace
+                .get_collection(namespace)
+                .make_context(self.config)
+            )
+        else:
+            raise AttributeError(f"unable to locate {namespace!r} namespace")
 
     def run(self, command: str, **kwargs: Any) -> Optional[Result]:
         """
