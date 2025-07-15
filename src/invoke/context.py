@@ -16,7 +16,9 @@ from .watchers import FailingResponder
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from invoke.runners import Runner
+
+    from .collection import Collection
+    from .runners import Runner
 
 
 class Context(DataProxy):
@@ -122,7 +124,7 @@ class Context(DataProxy):
         else:
             raise AttributeError(f"unable to locate {namespace!r} namespace")
 
-    def run(self, command: str, **kwargs: Any) -> Optional[Result]:
+    def run(self, command: str, /, **kwargs: Any) -> Optional[Result]:
         """
         Execute a local shell command, honoring config options.
 
@@ -147,7 +149,7 @@ class Context(DataProxy):
         command = self._prefix_commands(command)
         return runner.run(command, **kwargs)
 
-    def sudo(self, command: str, **kwargs: Any) -> Optional[Result]:
+    def sudo(self, command: str, /, **kwargs: Any) -> Optional[Result]:
         """
         Execute a shell command via ``sudo`` with password auto-response.
 
@@ -298,7 +300,7 @@ class Context(DataProxy):
         return " && ".join(prefixes + [command])
 
     @contextmanager
-    def prefix(self, command: str) -> Iterator:
+    def prefix(self, command: str, /) -> Iterator:
         """
         Prefix all nested `run`/`sudo` commands with given command plus ``&&``.
 
@@ -583,14 +585,14 @@ class MockContext(Context):
             # raise_from(NotImplementedError(command), None)
             raise NotImplementedError(command) from err
 
-    def run(self, command: str, *_: Any, **kwargs: Any) -> Result:
+    def run(self, command: str, /, *_: Any, **kwargs: Any) -> Result:
         # TODO: perform more convenience stuff associating args/kwargs with the
         # result? E.g. filling in .command, etc? Possibly useful for debugging
         # if one hits unexpected-order problems with what they passed in to
         # __init__.
         return self._yield_result("__run", command)
 
-    def sudo(self, command: str, *_: Any, **kwargs: Any) -> Result:
+    def sudo(self, command: str, /, *_: Any, **kwargs: Any) -> Result:
         # TODO: this completely nukes the top-level behavior of sudo(), which
         # could be good or bad, depending. Most of the time I think it's good.
         # No need to supply dummy password config, etc.

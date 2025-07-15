@@ -10,12 +10,15 @@ from lexicon import Lexicon
 
 from .config import copy_dict, merge_dicts
 from .context import Context
-from .parser import Context as ParserContext
+from .parser import ParserContext
 from .tasks import Task, task
 from .util import helpline
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
+
+    from .config import Config
+    from .tasks import Call
 
 
 class Collection:
@@ -25,7 +28,9 @@ class Collection:
     .. versionadded:: 1.0
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self, *args: Union[str, Collection, Task], **kwargs: Any
+    ) -> None:
         """
         Create a new task collection/namespace.
 
@@ -100,11 +105,11 @@ class Collection:
         See individual methods' API docs for details.
         """
         # Initialize
-        self.__parent: Optional[Collection] = None
-        self.name = None
+        self.name: Optional[str] = None
         self.tasks = Lexicon()
         self.collections = Lexicon()
         self.default: Optional[str] = None
+        self.__parent: Optional[Collection] = None
         self._configuration: dict = {}
         # Specific kwargs if applicable
         self.loaded_from = kwargs.pop("loaded_from", None)
@@ -115,7 +120,7 @@ class Collection:
         # Name if applicable
         _args = list(args)
         if _args and isinstance(args[0], str):
-            self.name = self.transform(_args.pop(0))
+            self.name = self.transform(str(_args.pop(0)))
         # Dispatch args/kwargs
         for arg in _args:
             self._add_object(arg)
@@ -126,13 +131,6 @@ class Collection:
     def __bool__(self) -> bool:
         return bool(self.task_names)
 
-    def __repr__(self) -> str:
-        task_names = list(self.tasks.keys())
-        collections = [f"{x}..." for x in self.collections.keys()]
-        return "<Collection {!r}: {}>".format(
-            self.name, ", ".join(sorted(task_names) + sorted(collections))
-        )
-
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Collection):
             return (
@@ -141,10 +139,6 @@ class Collection:
                 and self.collections == other.collections
             )
         return False
-
-    # def __getattr__(self, name: str) -> Any:
-    #     executor = Executor(self, self.config)
-    #     executor.execute(name)
 
     def __iter__(self) -> Collection:
         self.__queue = deque([self])
@@ -160,10 +154,13 @@ class Collection:
         raise StopIteration
 
     def __reversed__(self) -> Iterator[Collection]:
-        target: Optional[Collection] = self
+        target: Collection = self
         while target:
             yield target
-            target = target.parent
+            if target.parent:
+                target = target.parent
+            else:
+                raise StopIteration
 
     def __repr__(self) -> str:
         task_names = list(self.tasks.keys())
@@ -180,7 +177,7 @@ class Collection:
         config: Optional[dict] = None,
         loaded_from: Optional[str] = None,
         auto_dash_names: Optional[bool] = None,
-    ) -> "Collection":
+    ) -> Collection:
         """
         Return a new `.Collection` created from ``module``.
 
@@ -226,7 +223,7 @@ class Collection:
         """
         module_name = module.__name__.split(".")[-1]
 
-        def instantiate(obj_name: Optional[str] = None) -> "Collection":
+        def instantiate(obj_name: Optional[str] = None) -> Collection:
             # Explicitly given name wins over root ns name (if applicable),
             # which wins over actual module name.
             args = [name or obj_name or module_name]
@@ -269,7 +266,9 @@ class Collection:
     @property
     def path(self) -> str:
         """Get the path of this collection."""
-        return ".".join(reversed([x.name for x in reversed(self)]))
+        return ".".join(
+            reversed([x.name for x in reversed(self)])  # type: ignore
+        )
 
     @property
     def parent(self) -> Optional[Collection]:
@@ -281,21 +280,23 @@ class Collection:
         if self.__parent is None:
             self.__parent = collection
 
-    def task(self, *args, **kwargs):
+    def task(
+        self, func: Callable, *args: Union[Call, Task], **kwargs: Any
+    ) -> Task:
         """Wrap a callable object and register it to the current collection.
 
         .. versionadded:: 2.2.1
 
         """
-        t = task(*args, **kwargs)
+        t: Task = task(func, *args, **kwargs)
         if isinstance(t, Task):
             self.add_task(t)
             return t
 
-        def inner(*args, **kwargs):
-            configured_task = t(*args, **kwargs)
-            self.add_task(configured_task)
-            return configured_task
+        def inner(*args: Any, **kwargs: Any) -> Callable:
+            inner_task = t(func, *args, **kwargs)
+            self.add_task(inner_task)
+            return inner_task
 
         return inner
 
@@ -312,6 +313,7 @@ class Collection:
     def add_task(
         self,
         task: Task,
+        /,
         name: Optional[str] = None,
         aliases: Optional[tuple[str, ...]] = None,
         default: Optional[bool] = None,
@@ -339,9 +341,9 @@ class Collection:
             if task.name:
                 name = task.name
             # XXX https://github.com/python/mypy/issues/1424
-            elif hasattr(task.body, "func_name"):
+            elif task.body and hasattr(task.body, "func_name"):
                 name = task.body.func_name
-            elif hasattr(task.body, "__name__"):
+            elif task.body and hasattr(task.body, "__name__"):
                 name = task.__name__
             else:
                 raise ValueError("Could not obtain a name for this task!")
@@ -362,6 +364,7 @@ class Collection:
     def add_collection(
         self,
         coll: Union[Collection, ModuleType],
+        /,
         name: Optional[str] = None,
         default: Optional[bool] = None,
     ) -> None:
@@ -405,8 +408,8 @@ class Collection:
 
     def get_collection(self, path: str = ".") -> Collection:
         """Get collection."""
-        current = self
-        if path != '.':  # ignore self calls
+        current: Collection = self
+        if path != '.':  # self is already there
             target_subpaths = path.split('.')
             if path.startswith('.'):  # path is relative
                 target_subpaths = target_subpaths[1:]
@@ -434,8 +437,11 @@ class Collection:
                 # if source_subpaths exist then target is ancestor
                 if source_subpaths and not target_subpaths:
                     while source_subpaths:
-                        current = current.parent
-                        source_subpaths = source_subpaths[1:]
+                        if current.parent is not None:
+                            current = current.parent
+                            source_subpaths = source_subpaths[1:]
+                        else:
+                            raise Exception('no relative path exists between namespaces')
             # if target_subpaths exist then target is descendent of current
             for subpath in target_subpaths:
                 if subpath in current.collections.keys():

@@ -129,16 +129,16 @@ class Runner:
         self._disowned = False
 
     @overload
-    def run(self, command: str, *, disowned: None, **kwargs: Any) -> Result:
+    def run(self, command: str, /, *, disowned: None, **kwargs: Any) -> Result:
         ...
 
     @overload
     def run(
-        self, command: str, *, disowned: bool, **kwargs: Any
+        self, command: str, /, *, disowned: bool, **kwargs: Any
     ) -> Optional[Result]:
         ...
 
-    def run(self, command: str, **kwargs: Any) -> Optional[Result]:
+    def run(self, command: str, /, **kwargs: Any) -> Optional[Result]:
         """
         Execute ``command``, returning an instance of `Result` once complete.
 
@@ -413,7 +413,7 @@ class Runner:
             if not (self._asynchronous or self._disowned):
                 self.stop()
 
-    def echo(self, command: str) -> None:
+    def echo(self, command: str, /) -> None:
         print(self.opts["echo_format"].format(command=command))
 
     def _setup(self, command: str, kwargs: Any) -> None:
@@ -959,9 +959,7 @@ class Runner:
             for response in watcher.submit(stream):
                 self.write_proc_stdin(response)
 
-    def generate_env(
-        self, env: dict, replace_env: bool
-    ) -> dict:
+    def generate_env(self, env: dict, replace_env: bool) -> dict:
         """
         Return a suitable environment dict based on user input & behavior.
 
@@ -1065,7 +1063,7 @@ class Runner:
         """
         raise NotImplementedError
 
-    def start(self, command: str, shell: str, env: dict) -> None:
+    def start(self, command: str, /, shell: str, env: dict) -> None:
         """
         Initiate execution of ``command`` (via ``shell``, with ``env``).
 
@@ -1334,7 +1332,7 @@ class Local(Runner):
                 "Unable to close missing subprocess or stdin!"
             )
 
-    def start(self, command: str, shell: str, env: dict) -> None:
+    def start(self, command: str, /, shell: str, env: dict) -> None:
         if self.using_pty:
             if pty is None:  # Encountered ImportError
                 sys.exit(

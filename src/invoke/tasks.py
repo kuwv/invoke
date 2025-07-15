@@ -6,16 +6,17 @@ generate new tasks.
 from __future__ import annotations
 
 import inspect
-import types
+from collections.abc import Callable, Iterable
 from copy import deepcopy
-from functools import update_wrapper
+from functools import singledispatchmethod, update_wrapper
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
+    # Generic,
     Optional,
     Type,
-    TypeVar,
+    # TypeVar,
     Union,
     cast,
 )
@@ -24,16 +25,15 @@ from .context import Context
 from .parser import Argument, translate_underscores
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
     from inspect import Signature
 
     from .config import Config
     from .collection import Collection
 
-T = TypeVar("T", bound="Callable")
+# T = TypeVar("T", bound="Callable")
 
 
-class Task(Generic[T]):
+class Task:
     """
     Core object representing an executable task & its argument specification.
 
@@ -46,11 +46,64 @@ class Task(Generic[T]):
     ``__name__`` and ``__module__``, allowing it to "appear as" ``body`` for
     most intents and purposes.
 
+    May be called without any parentheses if no extra options need to be
+    specified. Otherwise, the following keyword arguments are allowed in the
+    parenthese'd form:
+
+    * ``name``: Default name to use when binding to a `.Collection`. Useful for
+      avoiding Python namespace issues (i.e. when the desired CLI level name
+      can't or shouldn't be used as the Python level name.)
+    * ``aliases``: Specify one or more aliases for this task, allowing it to be
+      invoked as multiple different names. For example, a task named ``mytask``
+      with a simple ``@task`` wrapper may only be invoked as ``"mytask"``.
+      Changing the decorator to be ``@task(aliases=['myothertask'])`` allows
+      invocation as ``"mytask"`` *or* ``"myothertask"``.
+    * ``positional``: Iterable overriding the parser's automatic "args with no
+      default value are considered positional" behavior. If a list of arg
+      names, no args besides those named in this iterable will be considered
+      positional. (This means that an empty list will force all arguments to be
+      given as explicit flags.)
+    * ``optional``: Iterable of argument names, declaring those args to
+      have :ref:`optional values <optional-values>`. Such arguments may be
+      given as value-taking options (e.g. ``--my-arg=myvalue``, wherein the
+      task is given ``"myvalue"``) or as Boolean flags (``--my-arg``, resulting
+      in ``True``).
+    * ``iterable``: Iterable of argument names, declaring them to :ref:`build
+      iterable values <iterable-flag-values>`.
+    * ``incrementable``: Iterable of argument names, declaring them to
+      :ref:`increment their values <incrementable-flag-values>`.
+    * ``default``: Boolean option specifying whether this task should be its
+      collection's default task (i.e. called if the collection's own name is
+      given.)
+    * ``auto_shortflags``: Whether or not to automatically create short
+      flags from task options; defaults to True.
+    * ``help``: dict mapping argument names to their help strings. Will be
+      displayed in ``--help`` output. For arguments containing underscores
+      (which are transformed into dashes on the CLI by default), either the
+      dashed or underscored version may be supplied here.
+    * ``pre``, ``post``: lists of task objects to execute prior to, or after,
+      the wrapped task whenever it is executed.
+    * ``autoprint``: Boolean determining whether to automatically print this
+      task's return value to standard output when invoked directly via the CLI.
+      Defaults to False.
+    * ``klass``: Class to instantiate/return. Defaults to `.Task`.
+
+    If any non-keyword arguments are given, they are taken as the value of the
+    ``pre`` kwarg for convenience's sake. (It is an error to give both
+    ``*args`` and ``pre`` at the same time.)
+
     .. versionadded:: 1.0
+    .. versionchanged:: 1.1
+        Added the ``klass`` keyword argument.
+    .. versionchanged:: 3.0
+        Consolidated ``Task`` and ``task`` capability.
     """
 
-    # TODO: store these kwarg defaults central, refer to those values both here
-    # and in @task.
+    def __new__(cls, *args: Union[Call, Task], **kwargs: Any) -> Task:
+        # XXX: need to move to metaclass to really pop kwargs
+        return super().__new__(kwargs.pop("klass", cls))
+
+    # TODO: store these kwarg defaults centrally
     # TODO: allow central per-session / per-taskmodule control over some of
     # them, e.g. (auto_)positional, auto_shortflags.
     # NOTE: we shadow __builtins__.help here on purpose - obfuscating to avoid
@@ -58,46 +111,54 @@ class Task(Generic[T]):
     # except a debug shell whose frame is exactly inside this class.
     def __init__(
         self,
-        body: Callable,
-        name: Optional[str] = None,
-        aliases: Iterable[str] = (),
-        positional: Optional[Iterable[str]] = None,
-        optional: Iterable[str] = (),
-        default: bool = False,
-        auto_shortflags: bool = True,
-        help: Optional[dict] = None,
-        pre: Optional[Union[list[str], str]] = None,
-        post: Optional[Union[list[str], str]] = None,
-        autoprint: bool = False,
-        iterable: Optional[Iterable[str]] = None,
-        incrementable: Optional[Iterable[str]] = None,
+        body: Optional[Callable] = None,
+        *args: Union[Call, Task],
+        **kwargs: Any,
     ) -> None:
+        # XXX: handle pre-tasks provided as args
+        if isinstance(body, Call) or isinstance(body, Task):
+            args = (body, *args)
+            body = None
         # Real callable
         self.body = body
-        update_wrapper(self, self.body)
-        # Copy a bunch of special properties from the body for the benefit of
-        # Sphinx autodoc or other introspectors.
-        self.__doc__ = getattr(body, "__doc__", "")
-        self.__name__ = getattr(body, "__name__", "")
-        self.__module__ = getattr(body, "__module__", "")
+        if self.body:
+            # XXX: update_wrapper not working well here
+            update_wrapper(self, self.body)
+            self.__doc__ = getattr(self.body, "__doc__", "")
+            self.__name__ = getattr(self.body, "__name__", "")
+            self.__module__ = getattr(self.body, "__module__", "")
+
         # Default name, alternate names, and whether it should act as the
         # default for its parent collection
-        self._name = name
-        self.aliases = aliases
-        self.is_default = default
-        # Arg/flag/parser hints
-        self.positional = self.fill_implicit_positionals(positional)
-        self.optional = tuple(optional)
-        self.iterable = iterable or []
-        self.incrementable = incrementable or []
-        self.auto_shortflags = auto_shortflags
-        self.help = (help or {}).copy()
+        self._name: str = kwargs.pop('name', None)
+        self.aliases: tuple[str, ...] = tuple(kwargs.pop('aliases', ()))
+        self.is_default: bool = bool(kwargs.pop('default', False))
+        self.optional: tuple[str, ...] = tuple(kwargs.pop('optional', ()))
+        self.iterable: Iterable[str] = kwargs.pop('iterable', [])
+        self.incrementable: Iterable[str] = kwargs.pop('incrementable', [])
+        self.auto_shortflags: bool = bool(kwargs.pop('auto_shortflags', True))
+        self.help: dict[str, Any] = (kwargs.pop('help', {})).copy()
         # Call chain bidness
-        self.pre = pre or []
-        self.post = post or []
-        self.times_called = 0
+        if args:
+            if "pre" in kwargs:
+                raise TypeError(
+                    "May not give *args and 'pre' kwarg simultaneously!"
+                )
+            kwargs["pre"] = args
+        self.pre: list[Union[Call, Task]] = kwargs.pop('pre', [])
+        self.post: list[Union[Call, Task]] = kwargs.pop('post', [])
         # Whether to print return value post-execution
-        self.autoprint = autoprint
+        self.autoprint: bool = bool(kwargs.pop('autoprint', False))
+        # Arg/flag/parser hints
+        self.positional = (
+            self.fill_implicit_positionals(kwargs.pop('positional', None))
+            if self.body is not None
+            else kwargs.pop('positional', None)
+        )
+        kwargs.pop('klass', None)  # XXX move to metaclass
+        if kwargs != {}:
+            raise TypeError
+        self.times_called = 0
 
     def __repr__(self) -> str:
         aliases = ""
@@ -111,12 +172,12 @@ class Task(Generic[T]):
         # Functions do not define __eq__ but func_code objects apparently do.
         # (If we're wrapping some other callable, they will be responsible for
         # defining equality on their end.)
-        if self.body == other.body:
-            return True
-        try:
-            return self.body.__code__ == other.body.__code__
-        except AttributeError:
-            return False
+        if self.body:
+            if self.body == other.body:
+                return True
+            if hasattr(self.body, "__code__"):
+                return self.body.__code__ == other.body.__code__  # type: ignore
+        return False
 
     def __hash__(self) -> int:
         # Presumes name and body will never be changed. Hrm.
@@ -124,15 +185,32 @@ class Task(Generic[T]):
         # this for now.
         return hash(self.name) + hash(self.body)
 
-    def __call__(self, *args: Any, **kwargs: Any) -> T:
-        # Guard against calling tasks with no context.
-        if not isinstance(args[0], Context):
-            err = "Task expected a Context as its first arg, got {} instead!"
-            # TODO: raise a custom subclass _of_ TypeError instead
-            raise TypeError(err.format(type(args[0])))
-        result = self.body(*args, **kwargs)
-        self.times_called += 1
-        return result
+    @singledispatchmethod
+    def __call__(
+        self, ctx: Union[Context, Callable], /, *args: Any, **kwargs: Any
+    ) -> Optional[Any]:
+        # TODO: raise a custom subclass _of_ TypeError instead
+        raise TypeError(
+            f"Task expected a Context as first arg, got {type(ctx)} instead!"
+        )
+
+    @__call__.register
+    def _(self, ctx: Context, /, *args: Any, **kwargs: Any) -> Optional[Any]:
+        if self.body:
+            result = self.body(ctx, *args, **kwargs)
+            self.times_called += 1
+            return result
+        raise AttributeError("task body is undefined")
+
+    @__call__.register
+    def _(self, body: Callable, /, *args: Any, **kwargs: Any) -> Any:
+        # print('func', body, args, kwargs)
+        if self.body is None:
+            update_wrapper(self, body)  # type: ignore
+            self.body = body
+            self.positional = self.fill_implicit_positionals(self.positional)
+        # XXX: need to register "Task" somehow but singledispath cannot see it
+        return self
 
     @property
     def called(self) -> bool:
@@ -157,14 +235,13 @@ class Task(Generic[T]):
             Changed from returning a two-tuple of ``(arg_names, spec_dict)`` to
             returning an `inspect.Signature`.
         """
-        # Handle callable-but-not-function objects
-        func = (
+        # Rebuild signature with first arg dropped, or die usefully(ish trying
+        sig = inspect.signature(
+            # Handle callable-but-not-function objects
             body
-            if isinstance(body, types.FunctionType)
+            if isinstance(body, FunctionType)
             else body.__call__  # type: ignore
         )
-        # Rebuild signature with first arg dropped, or die usefully(ish trying
-        sig = inspect.signature(func)
         params = list(sig.parameters.values())
         # TODO: this ought to also check if an extant 1st param _was_ a Context
         # arg, and yell similarly if not.
@@ -175,7 +252,9 @@ class Task(Generic[T]):
 
     def fill_implicit_positionals(
         self, positional: Optional[Iterable[str]]
-    ) -> "Iterable[str]":
+    ) -> Iterable[str]:
+        if self.body is None:
+            raise AttributeError("task body is undefined")
         # If positionals is None, everything lacking a default
         # value will be automatically considered positional.
         if positional is None:
@@ -247,6 +326,8 @@ class Task(Generic[T]):
         .. versionchanged:: 1.7
             Added the ``ignore_unknown_help`` kwarg.
         """
+        if self.body is None:
+            raise AttributeError("task body is undefined")
         # Core argspec
         sig = self.argspec(self.body)
         # Prime the list of all already-taken names (mostly for help in
@@ -283,78 +364,7 @@ class Task(Generic[T]):
         return args
 
 
-def task(*args: Any, **kwargs: Any) -> Task[T]:
-    """
-    Marks wrapped callable object as a valid Invoke task.
-
-    May be called without any parentheses if no extra options need to be
-    specified. Otherwise, the following keyword arguments are allowed in the
-    parenthese'd form:
-
-    * ``name``: Default name to use when binding to a `.Collection`. Useful for
-      avoiding Python namespace issues (i.e. when the desired CLI level name
-      can't or shouldn't be used as the Python level name.)
-    * ``aliases``: Specify one or more aliases for this task, allowing it to be
-      invoked as multiple different names. For example, a task named ``mytask``
-      with a simple ``@task`` wrapper may only be invoked as ``"mytask"``.
-      Changing the decorator to be ``@task(aliases=['myothertask'])`` allows
-      invocation as ``"mytask"`` *or* ``"myothertask"``.
-    * ``positional``: Iterable overriding the parser's automatic "args with no
-      default value are considered positional" behavior. If a list of arg
-      names, no args besides those named in this iterable will be considered
-      positional. (This means that an empty list will force all arguments to be
-      given as explicit flags.)
-    * ``optional``: Iterable of argument names, declaring those args to
-      have :ref:`optional values <optional-values>`. Such arguments may be
-      given as value-taking options (e.g. ``--my-arg=myvalue``, wherein the
-      task is given ``"myvalue"``) or as Boolean flags (``--my-arg``, resulting
-      in ``True``).
-    * ``iterable``: Iterable of argument names, declaring them to :ref:`build
-      iterable values <iterable-flag-values>`.
-    * ``incrementable``: Iterable of argument names, declaring them to
-      :ref:`increment their values <incrementable-flag-values>`.
-    * ``default``: Boolean option specifying whether this task should be its
-      collection's default task (i.e. called if the collection's own name is
-      given.)
-    * ``auto_shortflags``: Whether or not to automatically create short
-      flags from task options; defaults to True.
-    * ``help``: dict mapping argument names to their help strings. Will be
-      displayed in ``--help`` output. For arguments containing underscores
-      (which are transformed into dashes on the CLI by default), either the
-      dashed or underscored version may be supplied here.
-    * ``pre``, ``post``: lists of task objects to execute prior to, or after,
-      the wrapped task whenever it is executed.
-    * ``autoprint``: Boolean determining whether to automatically print this
-      task's return value to standard output when invoked directly via the CLI.
-      Defaults to False.
-    * ``klass``: Class to instantiate/return. Defaults to `.Task`.
-
-    If any non-keyword arguments are given, they are taken as the value of the
-    ``pre`` kwarg for convenience's sake. (It is an error to give both
-    ``*args`` and ``pre`` at the same time.)
-
-    .. versionadded:: 1.0
-    .. versionchanged:: 1.1
-        Added the ``klass`` keyword argument.
-    """
-    klass: Type[Task] = kwargs.pop("klass", Task)
-    # @task -- no options were (probably) given.
-    if len(args) == 1 and callable(args[0]) and not isinstance(args[0], Task):
-        return klass(args[0], **kwargs)
-    # @task(pre, tasks, here)
-    if args:
-        if "pre" in kwargs:
-            raise TypeError(
-                "May not give *args and 'pre' kwarg simultaneously!"
-            )
-        kwargs["pre"] = args
-
-    def inner(body: Callable) -> Task[T]:
-        _task = klass(body, **kwargs)
-        return _task
-
-    # update_wrapper(inner, klass)
-    return cast("Task[T]", inner)
+task = Task
 
 
 class Call:
@@ -371,6 +381,7 @@ class Call:
     def __init__(
         self,
         task: Task,
+        /,
         called_as: Optional[str] = None,
         args: Optional[tuple[str, ...]] = None,
         kwargs: Optional[dict] = None,
@@ -432,7 +443,6 @@ class Call:
         .. versionadded:: 1.1
         """
         return {
-            "task": self.task,
             "called_as": self.called_as,
             "args": deepcopy(self.args),
             "kwargs": deepcopy(self.kwargs),
@@ -469,10 +479,10 @@ class Call:
         data = self.clone_data()
         if with_ is not None:
             data.update(with_)
-        return klass(**data)
+        return klass(self.task, **data)
 
 
-def call(task: Task, *args: Any, **kwargs: Any) -> Call:
+def call(task: Task, /, *args: Any, **kwargs: Any) -> Call:
     """
     Describes execution of a `.Task`, typically with pre-supplied arguments.
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from .config import Config
 from .parser import ParserContext
@@ -50,7 +50,7 @@ class Executor:
 
     def execute(
         self, *tasks: Union[str, tuple[str, dict], ParserContext]
-    ) -> dict[Task, Result]:
+    ) -> dict[Task, Optional[Any]]:
         """
         Execute one or more ``tasks`` in sequence.
 
@@ -99,14 +99,14 @@ class Executor:
         """
         # Normalize input
         debug("Examining top level tasks %r", list(tasks))
-        calls = self.normalize(tasks)
+        calls: list[Call] = self.normalize(tasks)
         debug("Tasks (now Calls) with kwargs: %r", calls)
         # Obtain copy of directly-given tasks since they should sometimes
         # behave differently
         direct = list(calls)
         # Expand pre/post tasks
         # TODO: may make sense to bundle expansion & deduping now eh?
-        expanded = self.expand_calls(calls)
+        expanded: list[Call] = self.expand_calls(calls)
         # Get some good value for dedupe option, even if config doesn't have
         # the tree we expect. (This is a concession to testing.)
         try:
@@ -116,7 +116,7 @@ class Executor:
         # Dedupe across entire run now that we know about all calls in order
         calls = self.dedupe(expanded) if dedupe else expanded
         # Execute
-        results = {}
+        results: dict[Task, Optional[Any]] = {}
         # TODO: maybe clone initial config here? Probably not necessary,
         # especially given Executor is not designed to execute() >1 time at the
         # moment...
@@ -130,16 +130,16 @@ class Executor:
             # (collection & shell env)
             # TODO: load_collection needs to be skipped if task is anonymous
             # (Fabric 2 or other subclassing libs only)
-            collection_config = self.collection.configuration(call.called_as)
-            config.load_collection(collection_config)
+            config.load_collection(
+                self.collection.configuration(call.called_as)
+            )
             config.load_shell_env()
             debug("Finished loading collection & shell env configs")
             # Get final context from the Call (which will know how to generate
             # an appropriate one; e.g. subclasses might use extra data from
             # being parameterized), handing in this config for use there.
-            context = self.collection.make_context(config)
-            args = (context, *call.args)
-            result = call.task(*args, **call.kwargs)
+            ctx = self.collection.make_context(config)
+            result = call.task(ctx, *call.args, **call.kwargs)
             if autoprint:
                 print(result)
             # TODO: handle the non-dedupe case / the same-task-different-args
@@ -158,7 +158,7 @@ class Executor:
 
         .. versionadded:: 1.0
         """
-        calls = []
+        calls: list[Call] = []
         for task in tasks:
             name: Optional[str]
             if isinstance(task, str):
@@ -185,7 +185,7 @@ class Executor:
 
         .. versionadded:: 1.0
         """
-        deduped = []
+        deduped: list[Call] = []
         debug("Deduplicating tasks...")
         for call in calls:
             if call not in deduped:
@@ -208,7 +208,7 @@ class Executor:
 
         .. versionadded:: 1.0
         """
-        ret = []
+        ret: list[Call] = []
         for call in calls:
             # Normalize to Call (this method is sometimes called with pre/post
             # task lists, which may contain 'raw' Task objects)
